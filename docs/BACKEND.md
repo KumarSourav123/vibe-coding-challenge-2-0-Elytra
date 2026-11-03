@@ -144,6 +144,38 @@ Rules enforced in the service:
 
 **Phase 6:** attendance % uses only `status: "CLOSED"` sessions.
 
+## Matches (Phase 5)
+
+| File | Responsibility |
+| --- | --- |
+| `backend/validators/matchValidator.js` | Create and update bodies (participants: 1–100, unique ids, score 0–100000), eligible and list queries |
+| `backend/services/matchService.js` | `getEligiblePlayers`, `createMatch`, `listMatches`, `getMatch`, `updateMatch` |
+| `app/api/matches/**` | Thin routes (COACH only). `eligible-players` is a static segment, so it wins over `[id]` |
+
+**Eligibility:** `getAttendanceForDay(date, sport)` reads every session for the day.
+- Only `CLOSED` sessions contribute.
+- A player counts as present if any closed session has them PRESENT.
+- `assertParticipantsEligible` additionally requires `isActive` and the same sport, and reports the exact reason per player.
+
+`date` and `sport` can't be changed by PATCH. Updates compare-and-set on `__v` (409 `CONFLICT`).
+
+**Phase 6:** matches played for a player = `Match.countDocuments({ "participants.player": playerId })`. Per-match scores are in `participants.score`.
+
+## Readiness (Phase 6)
+
+| File | Responsibility |
+| --- | --- |
+| `backend/services/readinessService.js` | `computeReadiness` / `computePerformance` (pure), `aggregateStats` (CLOSED sessions + matches, two aggregations), `getCoachDashboard`, `listReadyPlayers`, `getPlayerPerformance`, `getOwnDashboard`, `getReadyPlayerForScout` |
+| `backend/validators/readinessValidator.js` | Coach dashboard and scout list queries |
+| `app/api/coach/dashboard`, `app/api/players/[id]/performance`, `app/api/player/dashboard`, `app/api/scout/players/**` | Thin routes with role guards |
+
+Rules:
+
+- **Never store readiness.** Always call the service.
+- **The threshold is integer math:** `attended × 100 ≥ 75 × completed`. `attendancePercent` is display-only.
+- **Player isolation:** `/api/player/dashboard` reads `user.player` from `requireRole(request, ROLES.PLAYER)`. Query params are ignored.
+- **Scout isolation:** only `isActive && isReady`. A non-Ready id returns the same 404 as an unknown id. Responses never include account data.
+
 ## Testing
 
 - `npm test` runs Vitest. `tests/backend/mongodb.integration.test.js` starts a real in-memory MongoDB (`mongodb-memory-server`), so tests never touch Atlas.

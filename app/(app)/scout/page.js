@@ -1,14 +1,16 @@
-import RoleHome from "@/frontend/features/auth/components/RoleHome";
+import PageHeader from "@/frontend/components/layout/PageHeader";
+import ScoutPlayerList from "@/frontend/features/readiness/components/ScoutPlayerList";
 
-export const metadata = { title: "Scout" };
-
-const UPCOMING = [
-  { label: "Browse Ready players", phase: 6 },
-  { label: "Player performance details", phase: 6 },
-];
+export const metadata = { title: "Ready players" };
 
 export default function ScoutHomePage() {
   return (
-    <RoleHome description="Discover players who meet the academy's readiness standard." upcoming={UPCOMING} />
+    <>
+      <PageHeader
+        title="Ready players"
+        description="Players with at least 75% attendance and 2 or more matches played. Only Ready players are shown."
+      />
+      <ScoutPlayerList />
+    </>
   );
 }

@@ -2,7 +2,7 @@
 
 One integrated **Next.js (App Router, JavaScript)** application with **Tailwind CSS**, **MongoDB Atlas** and **Mongoose**, deployable to **Vercel**. Coaches manage players, practice attendance and matches; players see their own records; scouts see only Ready players.
 
-> Status: **Phase 4 – Practice Sessions and Attendance complete.** See [docs/FEATURE_TRACKER.md](docs/FEATURE_TRACKER.md).
+> Status: **Phase 6 – Readiness and Role-Based Access complete.** All 11 compulsory competition tests pass. See [docs/FEATURE_TRACKER.md](docs/FEATURE_TRACKER.md).
 
 ## Quick start
 
@@ -69,11 +69,14 @@ app/                 Next.js pages and API route handlers
   api/auth/          login, logout, me, register, change-password
   api/players/       Player CRUD + reset-password (coach only)
   api/sessions/      Sessions, attendance, close (coach only)
+  api/matches/       Matches, scores, eligible players (coach only)
+  api/coach/ api/player/ api/scout/  Readiness dashboards per role
   (site)/            Public landing page (header + footer layout)
   (auth)/            /login and /register (focused, centered layout)
   (app)/             Signed-in area with sidebar (AppShell), protected by proxy.js:
-    coach/           Overview, players (list/add/details), sessions (list/new/attendance)
-    player/ scout/   Role overviews
+    coach/           Overview, players (list/add/details), sessions (list/new/attendance), matches (list/new/scores), readiness
+    player/          Own dashboard (attendance, matches, readiness)
+    scout/           Ready players list + detail
     account/password Change password (required after a temporary password)
   layout.js, globals.css  Root layout (Inter font, AuthProvider) and design tokens
 backend/             Server-only code (never import from client components)
@@ -104,5 +107,6 @@ docs/                Project documentation (start here)
 - [Development Roadmap](docs/DEVELOPMENT_ROADMAP.md) – seven phases, tasks, daily milestones
 - [Feature Tracker](docs/FEATURE_TRACKER.md) – status of every feature
 - [Backend Guide](docs/BACKEND.md) · [Frontend Guide](docs/FRONTEND.md)
+- [Manual Test Plan](docs/MANUAL_TEST_PLAN.md) – step-by-step full test of phases 1–6
 - [AI Prompt Templates](docs/AI_PROMPT_TEMPLATES.md)
 - [Master Development Prompt](MASTER_DEVELOPMENT_PROMPT.md)

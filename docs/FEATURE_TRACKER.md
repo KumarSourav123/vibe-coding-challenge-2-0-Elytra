@@ -17,12 +17,12 @@ Update this file whenever a status changes. Last updated: 2026-11-02.
 | 7b | First-login password change + change password | 3 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 8 | Practice sessions & attendance | 4 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 8a | UI redesign (app shell, design system) | 3→4 | N/A | N/A | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
-| 9 | Matches & scoring | 5 | DRAFT | PENDING | PENDING | PENDING | PENDING | PENDING |
-| 10 | Readiness calculation | 6 | DRAFT | PENDING | N/A | PENDING | PENDING | PENDING |
-| 11 | Coach dashboard | 6 | DRAFT | PENDING | PENDING | PENDING | PENDING | PENDING |
-| 12 | Player dashboard (own data only) | 6 | DRAFT | PENDING | PENDING | PENDING | PENDING | PENDING |
-| 13 | Scout dashboard (Ready only) | 6 | DRAFT | PENDING | PENDING | PENDING | PENDING | PENDING |
-| 14 | Compulsory competition test cases | 7 | N/A | PENDING | PENDING | PENDING | PENDING | PENDING |
+| 9 | Matches & scoring | 5 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 10 | Readiness calculation | 6 | IMPLEMENTED | COMPLETE | N/A | COMPLETE | INTEGRATED | COMPLETE |
+| 11 | Coach dashboard (readiness board + player performance) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 12 | Player dashboard (own data only) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 13 | Scout dashboard (Ready only) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 14 | Compulsory competition test cases (1–11) | 7 | N/A | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | TESTING (final check on Vercel in Phase 7) |
 | 15 | Production deployment (Vercel) | 7 | N/A | PENDING | PENDING | PENDING | PENDING | PENDING |
 
 ## Phase 1 verification log (2026-11-02)
@@ -80,6 +80,39 @@ Rules: eligible = active and same sport (Q1). A session closes only when every e
   - Close → 200 `CLOSED`. A later attendance edit → 409 `SESSION_CLOSED`.
   - Pages `/coach/sessions`, `/new` and `/:id` → 200. Anonymous → redirect to login.
 - Not yet done: a browser click-through of the session pages.
+
+## Phase 5 verification log (2026-11-03)
+
+Rule (Q3, the team's decision): a match participant must be active, play the same sport, and be PRESENT in a **CLOSED** session on the same date. Open sessions never count.
+
+- `npm run lint`: no errors. `npm run build`: succeeded.
+- `npm test`: 24 files, 232 tests passed. New suites:
+  - `matches.integration`: **compulsory tests 5–7**, open-session rejection, other date/sport, inactive, multiple sessions per day, duplicates, PATCH re-validation, authorization.
+  - `matchValidator`.
+  - Frontend `matchesApi` (with participant helpers).
+- Live check (`next start` + MongoDB): ran compulsory tests 1–7 end to end.
+  - While the session was OPEN: eligible lookup `{closed:0, open:1}`, and creating a match gave 400 "Arjun Mehta was not marked present in a closed Cricket session…".
+  - After close: eligible = Arjun and Bela.
+  - Match including Chen → 400 "Chen Li was absent on 2026-11-02". Match with Arjun 55 and Bela 32 → 201 (`totalScore 87`).
+  - PATCH score → `totalScore 92`.
+  - Pages `/coach/matches`, `/new` and `/:id` → 200. Anonymous → redirect to login.
+- Not yet done: a browser click-through of the match pages.
+
+## Phase 6 verification log (2026-11-03)
+
+Rule: READY = attendance ≥ 75% of CLOSED sessions (exact integer comparison) AND ≥ 2 matches. Computed on every request from MongoDB aggregations.
+
+- `npm run lint`: no errors. `npm run build`: succeeded.
+- `npm test`: 27 files, 260 tests passed. New suites:
+  - `readiness`: pure rule, including **compulsory tests 8–9** at the boundaries.
+  - `readiness.integration`: real records; open session ignored; **compulsory tests 10–11**; isolation; live recalculation; 401/403/404.
+  - Frontend `readinessApi`.
+- Live check (`next start` + MongoDB, data created only through the APIs): 3 players, 4 closed sessions, 2 matches.
+  - Coach dashboard: Arjun 3/4 = 75% with 2 matches → **READY**. Bela 2/4 = 50% with 2 matches → not ready. Chen 50% with 1 match → not ready.
+  - Scout list: only Arjun. Bela's scout detail → 404.
+  - Bela calling `/api/player/dashboard?playerId=<Arjun>` still gets only her own data. Her calls to `/api/players/:id/performance`, `/api/players/:id`, scout and coach endpoints → `FORBIDDEN`.
+  - Pages `/coach/readiness`, `/coach/players/:id`, `/scout`, `/scout/players/:id` and `/player` → 200. Player → `/scout` redirects to `/player`.
+- Not yet done: a browser click-through of the dashboards.
 
 ## Surprise requirement (4 Nov, 11:00 IST)
 

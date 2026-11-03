@@ -129,6 +129,35 @@ Mocks: `features/players/mocks/playersMock.js`. The sport field suggests `COMMON
   - `features/sessions/utils/attendanceLabel.js`.
 - **Testing:** keep pure helpers out of `.js` files that contain JSX. Vitest can't import JSX from `.js` files.
 
+## Matches feature (Phase 5)
+
+| Route | Component | What it does |
+| --- | --- | --- |
+| `/coach/matches` | `MatchList` | Sport filter. Table: opponent and date, sport, player count, top scorer |
+| `/coach/matches/new` | `CreateMatchForm` | Date, sport and opponent, then `ParticipantPicker`. Changing the date or sport clears the selection |
+| `/coach/matches/:id` | `MatchDetails` | Stat cards (players, total, top, average), ranked scoreboard, `EditMatchForm` (opponent and participants; date and sport fixed) |
+
+- **`ParticipantPicker`:**
+  - Calls `GET /api/matches/eligible-players` for the chosen date and sport.
+  - Shows a checkbox and score input per eligible player, with select all.
+  - Explains empty states: "Close the session first" (open session), "No session on this date", or "Nobody present".
+  - In edit mode, `existing` players who are no longer eligible are shown so the coach can remove them.
+- **`utils/participants.js`:** `buildParticipants` (client score check), `participantErrorsFrom` (maps `participants.<i>.*` server errors to player ids), `selectionFromMatch`.
+
+## Readiness feature (Phase 6)
+
+| Route | Component | What it does |
+| --- | --- | --- |
+| `/coach/readiness` | `CoachReadinessBoard` | Summary cards. Ready / Not ready tabs, sport filter, name search. Table with attendance bar (75% marker), matches out of 2, badge and what's missing |
+| `/coach/players/:id` | `PlayerPerformanceSection` | Performance and readiness under the profile |
+| `/player` | `PlayerDashboard` | The signed-in player's own records (no id is ever sent) |
+| `/scout` | `ScoutPlayerList` | Ready players: attendance, matches, average and best score |
+| `/scout/players/:id` | `ScoutPlayerDetail` | One Ready player. Others show "Player not available" |
+
+- `PerformanceDetail` (shared): stat cards, `ReadinessCard` (verdict, reasons and meters), match history and attendance history.
+- `ReadinessMeter`: a bar with a threshold marker, and a `compact` variant for tables.
+- `utils/readinessText.js`: `readinessGaps` (uses the same exact rule as the server), `readinessSummary`, `formatScore`.
+
 ## Health feature (reference implementation)
 
 `features/health` is the pattern to copy for later features:

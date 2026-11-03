@@ -5,17 +5,11 @@ export const NAV_BY_ROLE = {
     { href: "/coach", label: "Overview", icon: "overview", exact: true },
     { href: "/coach/players", label: "Players", icon: "users" },
     { href: "/coach/sessions", label: "Sessions", icon: "calendar" },
-    { href: "/coach/matches", label: "Matches", icon: "trophy", soon: true },
+    { href: "/coach/matches", label: "Matches", icon: "trophy" },
+    { href: "/coach/readiness", label: "Readiness", icon: "target" },
   ],
-  PLAYER: [
-    { href: "/player", label: "Overview", icon: "overview", exact: true },
-    { href: "/player/attendance", label: "Attendance", icon: "calendar", soon: true },
-    { href: "/player/matches", label: "Matches", icon: "trophy", soon: true },
-  ],
-  SCOUT: [
-    { href: "/scout", label: "Overview", icon: "overview", exact: true },
-    { href: "/scout/players", label: "Ready players", icon: "target", soon: true },
-  ],
+  PLAYER: [{ href: "/player", label: "My dashboard", icon: "overview", exact: true }],
+  SCOUT: [{ href: "/scout", label: "Ready players", icon: "target" }],
 };
 
 export const ACCOUNT_NAV = [{ href: "/account/password", label: "Password", icon: "key" }];

@@ -59,6 +59,7 @@ Error:
 | `INVALID_ACCESS_CODE` | 403 | Wrong registration access code |
 | `INVALID_CURRENT_PASSWORD` | 400 | `currentPassword` is wrong (`field: "currentPassword"`) |
 | `NO_LOGIN_ACCOUNT` | 409 | Player profile has no linked login account |
+| `NO_PLAYER_PROFILE` | 404 | Signed-in PLAYER account is not linked to a player profile |
 | `FORBIDDEN` | 403 | Authenticated, but the role or ownership is not allowed |
 | `NOT_FOUND` | 404 | Resource not found |
 | `DUPLICATE` | 409 | Unique constraint violated |
@@ -570,51 +571,229 @@ The temporary password is never returned. The Coach already knows it and shares 
 
 ---
 
-## 3. Proposed endpoints (DRAFT – finalize at the start of each phase)
+### Matches (Phase 5) – shared rules
 
-Request/response details below are **drafts**. Each must be completed with all 13 contract items and moved to `AGREED` before implementation.
+- **Match eligibility** (core rule #7, Q3). A player can be a participant only if they:
+  - are **active**,
+  - play the match's **sport**, and
+  - are marked **PRESENT** in at least one **CLOSED** session on the **same date** and **same sport**.
 
-| Phase | Method | Endpoint | Purpose | Role |
-| --- | --- | --- | --- | --- |
-| 5 | POST | `/api/matches` | Create match (date, sport, opponent, participants + scores) | COACH |
-| 5 | GET | `/api/matches` | List matches | COACH |
-| 5 | GET | `/api/matches/:id` | Match details | COACH |
-| 6 | GET | `/api/coach/dashboard` | All players with attendance %, matches played, readiness | COACH |
-| 6 | GET | `/api/player/dashboard` | Own profile, attendance, matches, readiness (identity from session) | PLAYER |
-| 6 | GET | `/api/scout/players` | Ready players only | SCOUT |
+  Open sessions never count. The rule is checked on create and on every participant update. Matches whose players later become inactive keep their records.
+- **One entry per player per match** (no duplicate participation). Each participant has exactly one score (core rule #8).
+- **Score** (Q6): a number from 0 to 100000 (decimals allowed).
+- `date` and `sport` are fixed after creation, because changing them would invalidate eligibility. `opponent` and `participants` can be edited.
+- **Matches played** (Phase 6) = the number of matches in which the player is a participant.
 
-### Draft shapes for planning
-
-Player:
-
-```json
-{ "id": "…", "name": "Asha", "age": 17, "sport": "Cricket", "isActive": true, "createdAt": "…", "updatedAt": "…" }
-```
-
-Session:
-
-```json
-{
-  "id": "…", "date": "2026-11-02", "sport": "Cricket", "status": "OPEN",
-  "attendance": [{ "player": "playerId", "status": "PRESENT", "markedAt": "…" }],
-  "closedAt": null
-}
-```
-
-Match:
+**Match object** (list entries have no `participants` array):
 
 ```json
 {
   "id": "…", "date": "2026-11-02", "sport": "Cricket", "opponent": "City XI",
-  "participants": [{ "player": "playerId", "score": 42 }]
+  "createdAt": "…", "updatedAt": "…",
+  "summary": { "participants": 2, "totalScore": 87, "topScore": 55, "topScorer": { "id": "…", "name": "Arjun Mehta" } },
+  "participants": [
+    { "player": { "id": "…", "name": "Arjun Mehta", "age": 16, "isActive": true }, "score": 55 },
+    { "player": { "id": "…", "name": "Bela Singh", "age": 17, "isActive": true }, "score": 32 }
+  ]
 }
 ```
 
-Readiness (draft):
+`participants` are sorted by score (highest first), then name. `topScorer` is `null` when there are no participants.
+
+**Participant input** (create and update): `{ "playerId": "…", "score": 55 }`.
+
+**`NOT_ELIGIBLE` messages** (`field` = `participants.<i>.playerId`):
+
+| Situation | Message |
+| --- | --- |
+| Unknown player | `Player not found` |
+| Inactive | `<name> is inactive` |
+| Different sport | `<name> plays Football, not Cricket` |
+| Marked ABSENT in the closed session | `<name> was absent on 2026-11-02` |
+| No PRESENT record in a closed session | `<name> was not marked present in a closed Cricket session on 2026-11-02` |
+
+---
+
+### 2.17 `GET /api/matches/eligible-players` – `IMPLEMENTED` (Phase 5)
+
+| Item | Value |
+| --- | --- |
+| Purpose | Who can be selected for a match on a date and sport |
+| Query params | `date` (`YYYY-MM-DD`, required). `sport` (required, normalized) |
+| Authentication / role | Required / COACH |
+| Frontend consumer | `matchesApi.getEligiblePlayers()` → player picker on `/coach/matches/new` and the match edit view |
+
+**200**
 
 ```json
-{ "attendancePercent": 75, "completedSessions": 4, "sessionsPresent": 3, "matchesPlayed": 2, "isReady": true }
+{
+  "date": "2026-11-02", "sport": "Cricket",
+  "sessions": { "closed": 1, "open": 0 },
+  "players": [ { "id": "…", "name": "Arjun Mehta", "age": 16 } ]
+}
 ```
+
+`sessions.open` lets the UI say "close today's session first". **Errors:** 400 `INVALID_FIELD`, 401, 403.
+
+---
+
+### 2.18 `POST /api/matches` – `IMPLEMENTED` (Phase 5)
+
+| Item | Value |
+| --- | --- |
+| Purpose | Create a match with its participants and their scores (core rules #6–8) |
+| Request body | `{ "date": "2026-11-02", "sport": "cricket", "opponent": "City XI", "participants": [ { "playerId": "…", "score": 55 } ] }` |
+| Authentication / role | Required / COACH |
+| Validation | `date` is a real calendar date. `sport` 1–50 chars. `opponent` 1–100 chars. `participants` 1–100 entries, each with a valid id appearing **once** and a valid score. **Every participant must be eligible**, otherwise nothing is saved |
+| Backend owner | Backend (`app/api/matches/route.js`, `backend/services/matchService.js`, `backend/validators/matchValidator.js`) |
+| Frontend consumer | `matchesApi.createMatch()` → `/coach/matches/new` |
+
+**201**: `{ "match": Match }`, with message `Match created`. **Errors:** 400 `INVALID_JSON` / `INVALID_FIELD` / `NOT_ELIGIBLE`, 401, 403.
+
+---
+
+### 2.19 `GET /api/matches` – `IMPLEMENTED` (Phase 5)
+
+| Item | Value |
+| --- | --- |
+| Purpose | List matches, newest date first |
+| Query params | `sport` (optional, normalized) |
+| Authentication / role | Required / COACH |
+| Frontend consumer | `matchesApi.listMatches()` → `/coach/matches` |
+
+**200**: `{ "matches": [Match (no participants)], "count": n }`. **Errors:** 401, 403.
+
+---
+
+### 2.20 `GET /api/matches/:id` – `IMPLEMENTED` (Phase 5)
+
+**200**: `{ "match": Match }`. **Errors:** 400 `INVALID_ID`, 404 `NOT_FOUND`, 401, 403. Role: COACH. Consumer: `/coach/matches/:id`.
+
+---
+
+### 2.21 `PATCH /api/matches/:id` – `IMPLEMENTED` (Phase 5)
+
+| Item | Value |
+| --- | --- |
+| Purpose | Correct the opponent or the participants and scores |
+| Request body | Any of `{ "opponent": "…", "participants": [ { "playerId", "score" } ] }`. At least one is required. `participants` **replaces** the whole list |
+| Validation | Same as create. Eligibility is re-checked for every participant |
+| Authentication / role | Required / COACH |
+
+**200**: `{ "match": Match }`, with message `Match updated`. **Errors:** 400 `INVALID_ID` / `INVALID_FIELD` / `NOT_ELIGIBLE`, 404, 409 `CONFLICT` (edited concurrently), 401, 403.
+
+**Test scenarios for 2.17–2.21** (`tests/backend/matches.integration.test.js`):
+- **Compulsory tests 5–7:** create a same-day match, allow the two present players, and reject the absent player.
+- Players from an open session, a different date or a different sport are rejected.
+- Inactive player → rejected. Duplicate player in one match → 400. Invalid scores → 400.
+- The eligible-players lookup reports closed and open session counts.
+- PATCH re-checks eligibility and replaces scores.
+- List is newest first. Invalid or unknown ids → 400 / 404. Anonymous → 401. Player or scout → 403.
+
+---
+
+### Readiness (Phase 6) – shared rules
+
+Readiness is **calculated on every request from the database**. It is never stored and never hardcoded (core rules #9–10).
+
+| Value | Definition |
+| --- | --- |
+| `completedSessions` | CLOSED sessions in which the player has an attendance record (Q4). Open sessions are ignored |
+| `sessionsAttended` | Of those, sessions where the player is PRESENT |
+| `attendancePercent` | `sessionsAttended / completedSessions × 100`, rounded to 1 decimal **for display only**. 0 when `completedSessions` is 0 |
+| `matchesPlayed` | Matches in which the player is a participant |
+| `isReady` | `completedSessions > 0` **and** `sessionsAttended × 100 ≥ 75 × completedSessions` (exact, so 75% qualifies; Q5) **and** `matchesPlayed ≥ 2` |
+
+**Readiness object:**
+
+```json
+{
+  "isReady": true, "attendancePercent": 75, "sessionsAttended": 3, "completedSessions": 4, "matchesPlayed": 2,
+  "requirements": { "minAttendancePercent": 75, "minMatchesPlayed": 2 }
+}
+```
+
+**Performance object:** `{ "totalScore": 87, "averageScore": 43.5, "bestScore": 55 }`. `averageScore` and `bestScore` are `null` with no matches. `averageScore` is rounded to 1 decimal.
+
+**Player performance detail** (§2.23–2.24, §2.26):
+
+```json
+{
+  "profile": { "id": "…", "name": "Arjun Mehta", "age": 16, "sport": "Cricket", "isActive": true },
+  "readiness": { … }, "performance": { … },
+  "attendance": [ { "sessionId": "…", "date": "2026-11-02", "sport": "Cricket", "status": "PRESENT" } ],
+  "matches": [ { "matchId": "…", "date": "2026-11-02", "sport": "Cricket", "opponent": "City XI", "score": 55 } ]
+}
+```
+
+- `attendance` lists closed sessions only, newest first. `matches` is newest first.
+- **Readiness row** (list endpoints): `{ "player": { id, name, age, sport, isActive }, "readiness": {…}, "performance": {…} }`, sorted by name.
+
+---
+
+### 2.22 `GET /api/coach/dashboard` – `IMPLEMENTED` (Phase 6)
+
+| Item | Value |
+| --- | --- |
+| Purpose | Readiness of every player in the academy |
+| Query params | `sport` (normalized). `readiness` = `all` · `ready` · `not_ready` (default `all`) |
+| Authentication / role | Required / COACH |
+| Frontend consumer | `readinessApi.getCoachDashboard()` → `/coach/readiness`, coach overview |
+
+**200**: `{ "summary": { "players": 5, "ready": 2, "notReady": 3 }, "players": [Readiness row] }`. `summary` counts the whole academy, before filters. **Errors:** 400 (bad `readiness`), 401, 403.
+
+---
+
+### 2.23 `GET /api/players/:id/performance` – `IMPLEMENTED` (Phase 6)
+
+Coach view of one player's performance and readiness. **200**: the player performance detail. **Errors:** 400 `INVALID_ID`, 404 `NOT_FOUND`, 401, 403. Role: COACH. Consumer: performance section on `/coach/players/:id`.
+
+---
+
+### 2.24 `GET /api/player/dashboard` – `IMPLEMENTED` (Phase 6)
+
+| Item | Value |
+| --- | --- |
+| Purpose | The signed-in player's own profile, attendance, matches and readiness (core rule #12) |
+| Request params | **None.** The player is taken from the session (`User.player`). There is no way to ask for another player |
+| Authentication / role | Required / PLAYER |
+| Frontend consumer | `readinessApi.getPlayerDashboard()` → `/player` |
+
+**200**: the player performance detail for the signed-in player. **Errors:** 401, 403 (non-player or temporary password), 404 `NO_PLAYER_PROFILE` (account not linked to a profile).
+
+---
+
+### 2.25 `GET /api/scout/players` – `IMPLEMENTED` (Phase 6)
+
+| Item | Value |
+| --- | --- |
+| Purpose | **Ready** players only (core rule #11) |
+| Query params | `sport` (optional, normalized) |
+| Authentication / role | Required / SCOUT |
+| Rules | Only players that are **active and Ready** are returned. No emails or account data are included |
+| Frontend consumer | `readinessApi.listReadyPlayers()` → `/scout` |
+
+**200**: `{ "players": [Readiness row], "count": n }`. **Errors:** 401, 403.
+
+---
+
+### 2.26 `GET /api/scout/players/:id` – `IMPLEMENTED` (Phase 6)
+
+Scout view of one Ready player (the player performance detail). A player who is not Ready or not active returns **404 `NOT_FOUND`**, exactly like an unknown id, so scouts can't learn that a non-Ready player exists. **Errors:** 400 `INVALID_ID`, 404, 401, 403. Role: SCOUT. Consumer: `/scout/players/:id`.
+
+**Test scenarios for 2.22–2.26** (`tests/backend/readiness*.test.js`):
+- **Compulsory test 8:** attendance below 75% (2 of 3) → not Ready.
+- **Compulsory test 9:** exactly 75% (3 of 4) and 2 matches → Ready. 75% with 1 match → not Ready.
+- **Compulsory test 10:** the scout list contains Ready players only. The detail for a non-Ready player → 404.
+- **Compulsory test 11:** the player dashboard returns only the signed-in player's data. A player calling `/api/players/:id`, `/api/players/:id/performance` or the scout endpoints → 403.
+- Open sessions don't affect attendance %. An inactive Ready player is hidden from scouts.
+- Coach dashboard filters work. Every endpoint: anonymous → 401, wrong role → 403.
+
+---
+
+## 3. Proposed endpoints
+
+None. Every endpoint in the original plan is now `IMPLEMENTED`. New endpoints (for example, from the surprise requirement) start here as `DRAFT`.
 
 ---
 
@@ -626,10 +805,12 @@ These must be confirmed (or changed by official requirements) before the phase t
 | --- | --- | --- | --- |
 | Q1 | Eligible player | **Decided (Phase 4):** `isActive: true` and `sport` equal to the session or match sport | ✅ |
 | Q2 | Sport matching | **Decided (Phase 3):** normalize on save (collapse spaces, Title Case), then match exactly. See §1.4 | ✅ |
-| Q3 | Same-day match | A player may join a match only if a session with the same calendar date (UTC day) and same sport has them marked PRESENT. Should that session also be CLOSED? Proposed: no. Present on an open or closed session counts | Phase 5 |
-| Q4 | Attendance % denominator | `PRESENT count / number of CLOSED sessions in which the player has an attendance record × 100`. Open sessions are excluded. 0 completed sessions → 0%, not Ready | Phase 6 |
-| Q5 | Rounding | Compare the unrounded percentage with 75 (so exactly 75% qualifies). Round to 1 decimal only for display | Phase 6 |
-| Q6 | Score | Non-negative number, one per participating player | Phase 5 |
+| Q3 | Same-day match | **Decided (2026-11-03):** a player may join a match only if a **CLOSED** session with the same calendar date and same sport has them marked PRESENT. Open sessions don't count, so attendance is final before match selection and records stay consistent | ✅ |
+| Q4 | Attendance % denominator | **Decided (Phase 6):** PRESENT count / CLOSED sessions in which the player has a record × 100. Open sessions are excluded. 0 completed sessions → 0%, not Ready | ✅ |
+| Q5 | Rounding | **Decided (Phase 6):** compare exactly with integers (`attended × 100 ≥ 75 × completed`), so exactly 75% qualifies. Round to 1 decimal only for display | ✅ |
+| Q16 | Scout visibility | **Decided (Phase 6):** scouts see only players who are active **and** Ready, without email or account data. Non-Ready players look "not found" | ✅ |
+| Q6 | Score | **Decided (Phase 5):** a number from 0 to 100000 (decimals allowed), exactly one per participating player | ✅ |
+| Q15 | Multiple matches per day | Allowed (e.g. a double-header). A player may appear in each, and each counts as a match played | ✅ |
 | Q7 | Multiple sessions per day | **Decided (Phase 4):** allowed. Any PRESENT record for that date and sport satisfies Q3 | ✅ |
 | Q12 | Closing rule | **Decided (Phase 4):** a session closes only when every eligible player is marked, so each eligible player has a record in every closed session of their sport (keeps Q4 exact). Closed sessions are immutable | ✅ |
 | Q13 | Future dates | Sessions may be created for any date (planning ahead). Attendance and closing aren't restricted by date (timezone-safe). Revisit if a rule is announced | Phase 6 |

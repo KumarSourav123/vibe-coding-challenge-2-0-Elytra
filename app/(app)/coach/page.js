@@ -5,10 +5,22 @@ export const metadata = { title: "Coach" };
 
 const ACTIONS = [
   {
+    title: "Readiness",
+    description: "See who meets 75% attendance and 2 matches, and what the rest still need.",
+    href: "/coach/readiness",
+    icon: "target",
+  },
+  {
     title: "Practice sessions",
     description: "Create sessions, mark attendance and close them.",
     href: "/coach/sessions",
     icon: "calendar",
+  },
+  {
+    title: "Matches",
+    description: "Record a match with the day's present players and their scores.",
+    href: "/coach/matches",
+    icon: "trophy",
   },
   {
     title: "Players",
@@ -18,14 +30,9 @@ const ACTIONS = [
   },
 ];
 
-const UPCOMING = [
-  { label: "Matches and scores", phase: 5 },
-  { label: "Performance and readiness dashboard", phase: 6 },
-];
-
 export default function CoachHomePage() {
   return (
-    <RoleHome description="Here's what's happening across your academy." actions={ACTIONS} upcoming={UPCOMING}>
+    <RoleHome description="Here's what's happening across your academy." actions={ACTIONS}>
       <CoachStats />
     </RoleHome>
   );

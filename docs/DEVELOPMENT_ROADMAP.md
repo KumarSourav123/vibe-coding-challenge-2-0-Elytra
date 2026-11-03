@@ -107,9 +107,18 @@ Every phase ends with: `npm run lint && npm test && npm run build` passing, the 
 
 ---
 
-## Phase 5 – Match Management and Scoring
+## Phase 5 – Match Management and Scoring ✅
 
 **Objective:** matches with participants restricted to same-date, same-sport PRESENT players, with one score each.
+
+**Delivered:**
+- **Endpoints:** `GET /api/matches/eligible-players`, `POST/GET /api/matches`, `GET/PATCH /api/matches/:id`.
+- **Eligibility** requires PRESENT in a **closed** session that day (Q3). Every create and update is all-or-nothing with per-player reasons.
+- **UI:**
+  - `/coach/matches`: list with top scorer.
+  - `/coach/matches/new`: details, then a picker offering only eligible players, with a score each. It tells the coach to close the session first when needed.
+  - `/coach/matches/:id`: stats, scoreboard, and edit (opponent, players, scores).
+- **Coach overview:** now shows the match count.
 
 | Task | Owner | Depends on | Output |
 | --- | --- | --- | --- |
@@ -123,9 +132,19 @@ Every phase ends with: `npm run lint && npm test && npm run build` passing, the 
 
 ---
 
-## Phase 6 – Readiness and Role-Based Access
+## Phase 6 – Readiness and Role-Based Access ✅
 
 **Objective:** readiness calculated from real data, plus role dashboards with strict data isolation.
+
+**Delivered:**
+- **Endpoints:** `GET /api/coach/dashboard`, `GET /api/players/:id/performance`, `GET /api/player/dashboard` (identity from the session only), `GET /api/scout/players`, `GET /api/scout/players/:id` (active and Ready only; others 404).
+- **Calculation:** `backend/services/readinessService.js`, a pure `computeReadiness` rule plus two aggregations. Exactly 75% qualifies, and open sessions are ignored.
+- **UI:**
+  - `/coach/readiness` board: filters, attendance bars with the 75% marker, and what each player is missing.
+  - Performance section on `/coach/players/:id`.
+  - `/player` dashboard.
+  - `/scout` Ready list and `/scout/players/:id`.
+  - Coach overview "Ready players" stat.
 
 | Task | Owner | Depends on | Output |
 | --- | --- | --- | --- |

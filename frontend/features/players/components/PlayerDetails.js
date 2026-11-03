@@ -13,6 +13,7 @@ import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { getPlayer, updatePlayer } from "../api/playersApi";
 import PlayerForm from "./PlayerForm";
 import PlayerStatusBadges from "./PlayerStatusBadges";
+import PlayerPerformanceSection from "@/frontend/features/readiness/components/PlayerPerformanceSection";
 import ResetPasswordPanel from "./ResetPasswordPanel";
 
 const BACK = { backHref: "/coach/players", backLabel: "Players" };
@@ -140,12 +141,6 @@ export default function PlayerDetails({ playerId }) {
                 </DetailRow>
               </dl>
             </Card>
-            <Card title="Performance">
-              <p className="text-sm text-slate-500">
-                Attendance, match history and readiness for this player will appear here once sessions and matches
-                are recorded.
-              </p>
-            </Card>
           </div>
 
           <div className="space-y-6 lg:col-span-2">
@@ -174,6 +169,13 @@ export default function PlayerDetails({ playerId }) {
             )}
           </div>
         </div>
+      )}
+
+      {!editing && (
+        <section className="mt-10">
+          <h2 className="mb-4 text-lg font-semibold tracking-tight text-slate-900">Performance & readiness</h2>
+          <PlayerPerformanceSection playerId={player.id} refreshKey={player.updatedAt} />
+        </section>
       )}
     </>
   );

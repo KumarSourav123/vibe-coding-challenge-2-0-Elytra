@@ -1,19 +1,7 @@
-import RoleHome from "@/frontend/features/auth/components/RoleHome";
+import PlayerDashboard from "@/frontend/features/readiness/components/PlayerDashboard";
 
-export const metadata = { title: "Player" };
-
-const UPCOMING = [
-  { label: "Your profile", phase: 6 },
-  { label: "Your attendance", phase: 6 },
-  { label: "Your match history", phase: 6 },
-  { label: "Your readiness status", phase: 6 },
-];
+export const metadata = { title: "Your dashboard" };
 
 export default function PlayerHomePage() {
-  return (
-    <RoleHome
-      description="Follow your attendance, matches and readiness. Only you can see your records."
-      upcoming={UPCOMING}
-    />
-  );
+  return <PlayerDashboard />;
 }

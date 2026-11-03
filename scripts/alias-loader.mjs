@@ -15,10 +15,14 @@ export async function resolve(specifier, context, nextResolve) {
   try {
     return await nextResolve(target, context);
   } catch (error) {
+    if (target.endsWith(".js")) throw error;
     const isFileLike = target.startsWith("file:") || target.startsWith(".");
-    if (!isFileLike || target.endsWith(".js")) throw error;
-    if (error.code === "ERR_MODULE_NOT_FOUND") return nextResolve(`${target}.js`, context);
-    if (error.code === "ERR_UNSUPPORTED_DIR_IMPORT") return nextResolve(`${target}/index.js`, context);
+    // Package subpaths without an "exports" map, e.g. "next/server" -> "next/server.js".
+    const isPackageSubpath = !isFileLike && target.includes("/") && !target.startsWith("node:");
+    if (error.code === "ERR_MODULE_NOT_FOUND" && (isFileLike || isPackageSubpath)) {
+      return nextResolve(`${target}.js`, context);
+    }
+    if (isFileLike && error.code === "ERR_UNSUPPORTED_DIR_IMPORT") return nextResolve(`${target}/index.js`, context);
     throw error;
   }
 }

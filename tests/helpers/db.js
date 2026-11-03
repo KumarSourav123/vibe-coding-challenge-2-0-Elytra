@@ -20,7 +20,7 @@ export async function stopTestDatabase(mongo) {
   delete process.env.MONGODB_URI;
 }
 
-/** Create a user directly in the database with a real password hash. */
+/** Create a user directly in the database with a real password hash. Pass `academy`. */
 export async function createUser({ password, ...fields }) {
   return User.create({ ...fields, passwordHash: await hashPassword(password) });
 }

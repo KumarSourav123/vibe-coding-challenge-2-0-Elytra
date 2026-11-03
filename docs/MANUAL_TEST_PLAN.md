@@ -1,475 +1,451 @@
-# Manual Test Plan – Phases 1 to 6
+# How to Test the Sports Academy App
 
-A full end-to-end test of everything built so far. Work through the sections **in order**: later steps reuse the data created earlier. Tick each box as you go and note any failure in the [results log](#12-results-log) at the end.
+A simple, step-by-step guide to check that everything works. No coding knowledge needed.
 
-**Time needed:** about 60–90 minutes.
+You'll play every role yourself: first you **create an academy** (as its Head Coach), then you're a **Player**, then a **Scout**, and finally a **second academy** to prove each academy's data stays private. Follow the steps **in order**, because each step uses what you created in the step before.
+
+⏱️ **Time needed:** about 60 minutes.
+
+Each step ends with **✅ Pass if**. If what you see matches, tick the box. If not, write it down in the [Problems found](#problems-found) table at the end.
 
 ---
 
-## 0. Before you start
+## Before you start
 
-### 0.1 Use a separate test database
+### 1. Choose where you're testing
 
-Don't test on the database you'll demo with. In `.env.local`, point `MONGODB_URI` at a **test** database by putting a name after `.net/`:
-
-```
-MONGODB_URI=mongodb+srv://USER:PASS@cluster0.xxxx.mongodb.net/sports-academy-test?retryWrites=true&w=majority
-```
-
-To start fresh later, delete the `sports-academy-test` database in Atlas (Browse Collections → database → Drop).
-
-### 0.2 Check `.env.local` has every key
-
-| Key | Example value | Used for |
+| | **Local site** (your computer) | **Live site** (on the internet) |
 | --- | --- | --- |
-| `MONGODB_URI` | (see above) | Database |
-| `AUTH_SECRET` | 32+ random characters | Login cookies |
-| `COACH_SIGNUP_CODE` | `coach-code-2026` | Coach sign-up (section 4) |
-| `SCOUT_SIGNUP_CODE` | `scout-code-2026` | Scout sign-up (section 4) |
-| `SEED_PASSWORD` | `Academy@2026` | Demo accounts |
+| Address | http://localhost:3000 | The Vercel link, e.g. `https://your-app.vercel.app` |
+| How to open it | In the project folder, run `npm run dev` in a terminal. Wait until it says **Ready**, then open the address | Just open the link |
+| Join codes | Nothing to set up: you create your own academy, and its join codes appear on the **Academy** page | Same as local |
 
-### 0.3 Two browser windows
+Everything below works the same on both. Wherever this guide says **"the site"**, use your address from this table.
 
-Cookies are shared within one browser, so logging in as a player in the same window logs the coach out. Use:
+> **Testing the live site?** Use a test database, or names like "Test Arjun", so you don't mix test data with real data.
 
-- **Window C (Coach):** your normal browser window.
-- **Window P (Player / Scout):** an **Incognito / Private** window.
+### Shortcut for judges (evaluation mode)
 
-### 0.4 IDs you'll collect
+If the site runs with **evaluation mode** on, you'll see a yellow **"For evaluation only"** box:
+- On **Sign in**, with ready-made Coach, Scout and Player logins. Click **Use** to fill the form.
+- On **Create account → Join an academy**, with the demo academy's join codes. Click **Use** to fill the code.
 
-Some API checks need record IDs. You'll find them in the page URL, for example `/coach/players/6ae8…` (the ID is the last part). Note them here as you go:
+You can use these to look around quickly. For the full test, still follow the parts below, which create your own academy.
 
-| Item | ID |
-| --- | --- |
-| Player – Chen Li | |
-| Player – Fiona Football | |
-| Cricket session (today) | |
-| Cricket match | |
+### 2. Open two browser windows
 
-### 0.5 How to run an API check from the browser
+You'll be logged in as two people at once, so you need two windows:
 
-Some tests call the API directly, to prove the **server** blocks things even if someone bypasses the UI.
+- **Window 1 (Coach):** your normal browser window.
+- **Window 2 (Player / Scout):** a **private / incognito** window (Chrome: `Ctrl + Shift + N`).
 
-1. In the right window, press **F12**, then open the **Console** tab.
-2. Paste the snippet shown in the step and press Enter.
-3. Read the JSON printed. The expected `code` or `message` is listed in the step.
+> If you use only one window, logging in as a player logs the coach out.
 
-> If Chrome warns about pasting, type `allow pasting` and press Enter first.
+### 3. Keep a notepad open
+
+You'll write down a few passwords as you go.
 
 ---
 
-## 1. Automated checks
+## Part 1 – Is the site up?
 
-Run in the project folder:
+**Window 1:** open the site.
 
-| # | Command | Expected | ✔ |
-| --- | --- | --- | --- |
-| 1.1 | `npm install` | Finishes without errors | ☐ |
-| 1.2 | `npm run lint` | No errors printed | ☐ |
-| 1.3 | `npm test` | `Test Files 27 passed`, `Tests 260 passed` | ☐ |
-| 1.4 | `npm run build` | `✓ Compiled successfully`, with a route list | ☐ |
-| 1.5 | `npm run seed` | Creates (or skips) coach@, scout@ and player@academy.test | ☐ |
-| 1.6 | `npm run seed` again | All three show `skip … (already exists)` | ☐ |
-| 1.7 | `npm run dev` | `Ready` at http://localhost:3000 | ☐ |
+- [ ] **1.1** The home page loads with the heading **"Run your sports academy from one place."**
+  ✅ Pass if the page looks complete: header, a sample player card marked "Example", and sections for Roles and Readiness.
 
-Keep `npm run dev` running for the rest of the test.
+- [ ] **1.2** Scroll to the bottom, to **System status**.
+  ✅ Pass if it says **Database: Operational** with a green dot.
+
+- [ ] **1.3** Click **Recheck**.
+  ✅ Pass if it briefly says "Checking" and then "Operational" again.
 
 ---
 
-## 2. Phase 1 – Landing page and health
+## Part 2 – Create your academy
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 2.1 | Open http://localhost:3000 | Hero "Run your sports academy from one place.", an example readiness card labelled **Example**, and Roles, Readiness and Status sections | ☐ |
-| 2.2 | Scroll to **System status** | Database: **Operational** (green dot), with a latency in ms | ☐ |
-| 2.3 | Click **Recheck** | Briefly shows Checking, then Operational again | ☐ |
-| 2.4 | Open http://localhost:3000/api/health | JSON with `"success":true` and `"database":{"status":"connected",…}` | ☐ |
-| 2.5 | Header links Roles / Readiness / Status | Each scrolls to its section | ☐ |
-| 2.6 | *(Optional)* Change one character of the password in `MONGODB_URI`, restart `npm run dev`, reload | Status shows **Disconnected**, and `/api/health` returns `DB_CONNECTION_FAILED` with no connection string in the response. **Revert the change and restart afterwards** | ☐ |
+Anyone can create a new academy. Whoever creates it becomes its **Head Coach**. Other coaches and scouts join later with a **join code** the Head Coach gives them.
 
----
+**Window 1:** click **Sign in**, then **Create or join an academy** (under the form).
 
-## 3. Phase 2 – Login, roles and protected pages
+- [ ] **2.1** Check the two tabs at the top: **Create an academy** and **Join an academy**.
+  ✅ Pass if there's no way to sign up as a player. The page says players get their login from their coach.
 
-Use the seed accounts with your `SEED_PASSWORD`.
+- [ ] **2.2** Choose **Create an academy**. Fill in: Academy name `Test Cricket Academy`, your name `Coach Kim`, email `kim@test.com`, password `CoachKim123`, and a **different** password in "Confirm password". Click **Create academy**.
+  ✅ Pass if you see **"Passwords do not match"**.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 3.1 | Window C: open `/coach` while signed out | Redirected to `/login?next=%2Fcoach` | ☐ |
-| 3.2 | Log in as `coach@academy.test` with a **wrong password** | Red banner "Invalid email or password" | ☐ |
-| 3.3 | Log in as `nobody@academy.test` (unknown email) | **Same** message as 3.2, with no hint that the email doesn't exist | ☐ |
-| 3.4 | Submit with both fields empty | "Email is required" and "Password is required" under the fields | ☐ |
-| 3.5 | Log in as `COACH@Academy.TEST` (mixed case) with the right password | Works. Lands on `/coach` with the sidebar showing Overview, Players, Sessions and Matches | ☐ |
-| 3.6 | Refresh the page | Still signed in | ☐ |
-| 3.7 | While signed in, open `/login` | Redirected to `/coach` | ☐ |
-| 3.8 | Open `/player`, then `/scout` | Both redirect back to `/coach` | ☐ |
-| 3.9 | Window P: log in as `scout@academy.test` | Lands on `/scout` with a scout sidebar (Ready players marked Soon) | ☐ |
-| 3.10 | Window P: open `/coach/players` | Redirected to `/scout` | ☐ |
-| 3.11 | Window P: open http://localhost:3000/api/players | `"code":"FORBIDDEN"` (scouts can't use coach APIs) | ☐ |
-| 3.12 | Window P: log out (icon next to your name, bottom of sidebar) | Back on `/login` | ☐ |
-| 3.13 | Window P: open http://localhost:3000/api/auth/me | `"code":"UNAUTHENTICATED"` | ☐ |
-| 3.14 | Window P: log in as `player@academy.test` | Lands on `/player` | ☐ |
-| 3.15 | Window P: open `/coach` | Redirected to `/player` | ☐ |
-| 3.16 | Window P: log out | Signed out | ☐ |
-| 3.17 | *(Mobile)* In Window C, shrink the window to phone width (or use DevTools device mode) | The sidebar becomes a top bar with a ☰ menu, which opens a slide-in menu | ☐ |
+- [ ] **2.3** Type `CoachKim123` in both password boxes and click **Create academy**.
+  ✅ Pass if you land on the **Coach overview** ("Welcome back, Coach"). The sidebar shows the academy name **Test Cricket Academy** at the top, and **"Head Coach"** under your name at the bottom.
+
+- [ ] **2.4** Sidebar → **Academy**.
+  ✅ Pass if you see two codes that look like `K7P2-9QX4-M3T8`: a **Coach join code** and a **Scout join code**, each with a **Copy** button. **Write both codes in your notepad.** You'll use them later.
+
+- [ ] **2.5** Log out (the icon next to your name at the bottom of the sidebar). Go to sign-up, choose **Join an academy**, and type `AAAA-BBBB-CCCC` as the join code.
+  ✅ Pass if it says **"This join code doesn't match any academy"**.
+
+- [ ] **2.6** Type the **Coach join code** from your notepad.
+  ✅ Pass if a green box says **"You're joining Test Cricket Academy as a Coach"**. Don't finish signing up. Go back to **Sign in**.
+
+- [ ] **2.7** Log in as `kim@test.com`, first with a **wrong password**.
+  ✅ Pass if you see **"Invalid email or password"**, and then the right password (`CoachKim123`) works.
 
 ---
 
-## 4. Phase 3a – Coach and scout sign-up (access codes)
+## Part 3 – Add players
 
-Use Window P (signed out).
+Only a coach can add players. When the coach adds a player, the player's login is created at the same time, with a **temporary password**.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 4.1 | `/login`, then click "Create one" | `/register` page | ☐ |
-| 4.2 | Register: Name `Coach Two`, email `coach2@academy.test`, role Coach, access code `wrong-code`, password `coachtwo123` (both fields) | Error under Access code: "Invalid access code". No account is created | ☐ |
-| 4.3 | Same, but with the **scout** code while role is Coach | "Invalid access code" (each role has its own code) | ☐ |
-| 4.4 | Same, with password `short` | "Password must be at least 8 characters" | ☐ |
-| 4.5 | Confirm password that doesn't match | "Passwords do not match" | ☐ |
-| 4.6 | Correct `COACH_SIGNUP_CODE` and matching passwords | Account created. Signed in and on `/coach` | ☐ |
-| 4.7 | Log out. Register again with the **same email** and the right code | "This email is already registered" | ☐ |
-| 4.8 | Register `scout2@academy.test`, role Scout, with `SCOUT_SIGNUP_CODE` | Lands on `/scout` | ☐ |
-| 4.9 | Check the role dropdown | Only Coach and Scout. No Player option | ☐ |
-| 4.10 | Log out of Window P | | ☐ |
+**Window 1:** sidebar → **Players** → **Add player**.
 
----
+- [ ] **3.1** Click **Create player** without filling anything in.
+  ✅ Pass if every box shows a red "… is required" message.
 
-## 5. Phase 3b – Player management
+- [ ] **3.2** Type age `3`.
+  ✅ Pass if it says the age must be between **5 and 60**.
 
-Window C, signed in as the coach. Go to **Players**, then **Add player**.
+- [ ] **3.3** Add these five players. For each one, click **Generate** for the password, and **write the password in your notepad before clicking Create player**.
 
-### 5.1 Validation
+  | Name | Age | Sport (type exactly as shown) | Email |
+  | --- | --- | --- | --- |
+  | Arjun Mehta | 16 | `cricket` | arjun@test.com |
+  | Bela Singh | 17 | `CRICKET` | bela@test.com |
+  | Chen Li | 15 | `Cricket` | chen@test.com |
+  | Fiona Football | 16 | `football` | fiona@test.com |
+  | Dev Patel | 18 | `Cricket` | dev@test.com |
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 5.1.1 | Click **Create player** with everything empty | Each field shows "… is required" | ☐ |
-| 5.1.2 | Name `A`, Age `3`, Sport `Cricket`, Email `bad`, Temp password `short` | Messages: name ≥ 2 characters, age 5–60, email invalid, password ≥ 8 characters | ☐ |
-| 5.1.3 | Use email `coach@academy.test` (already taken) with otherwise valid data | "This email is already registered". **The players list doesn't gain a new player** (no half-created records) | ☐ |
+  ✅ Pass if after each one you see a green box: **"… is ready to sign in"**, showing the email and password, with a **Copy details** button.
 
-### 5.2 Create the test players (compulsory test 1)
+- [ ] **3.4** Try adding another player with the email `arjun@test.com` again.
+  ✅ Pass if you see **"This email is already registered"**.
 
-Create these. Click **Generate** for the temporary password, then **write it down** before saving.
+- [ ] **3.5** Go to **Players**.
+  ✅ Pass if all 5 players are listed. Arjun, Bela and Chen all show the sport as exactly **"Cricket"**, even though you typed it differently. Each player shows **Active** and **Temporary password**.
 
-| Name | Age | Sport (type exactly) | Email | ✔ |
-| --- | --- | --- | --- | --- |
-| Arjun Mehta | 16 | `cricket` | arjun@academy.test | ☐ |
-| Bela Singh | 17 | `CRICKET ` (capitals + space) | bela@academy.test | ☐ |
-| Chen Li | 15 | `Cricket` | chen@academy.test | ☐ |
-| Fiona Football | 16 | `football` | fiona@academy.test | ☐ |
-| Dev Patel | 18 | `Cricket` | dev@academy.test | ☐ |
-
-| # | Check | Expected | ✔ |
-| --- | --- | --- | --- |
-| 5.2.1 | After each save | A green card "… is ready to sign in" with the email and password, and **Copy details** works | ☐ |
-| 5.2.2 | Players list | All 5 players appear. Arjun's, Bela's and Chen's sport all show exactly **Cricket** (normalized) | ☐ |
-| 5.2.3 | Badges | Each shows **Active** and **Temporary password** | ☐ |
-| 5.2.4 | Search `bela` | Only Bela | ☐ |
-| 5.2.5 | Search `fiona@` | Only Fiona (searches email too) | ☐ |
-| 5.2.6 | Sport filter **Football** | Only Fiona | ☐ |
-| 5.2.7 | Search `zzz` | "No players match your filters", with **Clear filters** | ☐ |
-| 5.2.8 | Overview page | "Active players" counts all players. The hint shows how many are awaiting sign-in | ☐ |
-
-Note Chen's and Fiona's IDs from their page URLs in table 0.4.
-
-### 5.3 First login with a temporary password
-
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 5.3.1 | Window P: log in as `arjun@academy.test` with his temporary password | Lands on **/account/password** with "Choose your own password" | ☐ |
-| 5.3.2 | Window P: try opening `/player` | Sent back to `/account/password` | ☐ |
-| 5.3.3 | Window P: open http://localhost:3000/api/players | `"code":"PASSWORD_CHANGE_REQUIRED"` | ☐ |
-| 5.3.4 | Change password with a **wrong** temporary password | "Current password is incorrect" | ☐ |
-| 5.3.5 | New password = the temporary password | "New password must be different…" | ☐ |
-| 5.3.6 | Correct temp password, new `ArjunOwn123` (twice) | Lands on `/player` ("Welcome back, Arjun") | ☐ |
-| 5.3.7 | Log out, log in with the **old** temporary password | "Invalid email or password" | ☐ |
-| 5.3.8 | Log in with `ArjunOwn123` | Goes straight to `/player`, with no forced change | ☐ |
-| 5.3.9 | Window C: refresh Arjun's page | Login card shows Password: **Set by player**. The list no longer shows "Temporary password" for Arjun | ☐ |
-
-### 5.4 Edit, deactivate and reset
-
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 5.4.1 | Window C: open **Dev Patel**, then **Edit**, change age to 19, Save | "Changes saved." Age 19 shown | ☐ |
-| 5.4.2 | Edit Dev, toggle **Active** off, Save | Badge **Inactive** | ☐ |
-| 5.4.3 | Window P: log in as Dev with his temp password | "This account has been disabled" | ☐ |
-| 5.4.4 | Window C: Players, status filter **Inactive** | Only Dev | ☐ |
-| 5.4.5 | Keep Dev **inactive** (it's used in section 6) | | ☐ |
-| 5.4.6 | Window P: log in as Arjun (`ArjunOwn123`) and stay on `/player` | Signed in | ☐ |
-| 5.4.7 | Window C: open Arjun, **Reset**, **Generate**, **Set password**, then note the new password | Green card with new credentials. Login shows Password: **Temporary** | ☐ |
-| 5.4.8 | Window P: refresh | Session has ended (sent to login, or "Your session has ended") | ☐ |
-| 5.4.9 | Window P: log in as Arjun with the **new** temp password, then set the password back to `ArjunOwn123` | Works, then lands on `/player` | ☐ |
-| 5.4.10 | Window P: log out | | ☐ |
+- [ ] **3.6** Type `bela` in the search box, then pick **Football** in the sport filter.
+  ✅ Pass if the search shows only Bela, and the filter shows only Fiona.
 
 ---
 
-## 6. Phase 4 – Practice sessions and attendance
+## Part 4 – A player logs in for the first time
 
-Window C (coach). Go to **Sessions**.
+New players must replace the temporary password the coach gave them.
 
-### 6.1 Create a session (compulsory test 2)
+**Window 2 (private):** open the site → **Sign in**.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 6.1.1 | **New session**: the date defaults to **today**. Type sport `cricket` | Hint: "3 active players play Cricket" (Dev is inactive, Fiona plays Football) | ☐ |
-| 6.1.2 | Click **Create session** | Opens the session page, titled with today's date. Status **Open**. Stats: Eligible 3, Present 0, Absent 0, Unmarked 3 | ☐ |
-| 6.1.3 | Roster | Exactly **Arjun, Bela, Chen**. No Fiona (other sport) and no Dev (inactive) | ☐ |
+- [ ] **4.1** Log in as `bela@test.com` with **Bela's temporary password** from your notepad.
+  ✅ Pass if you're taken straight to a **"Change password"** page with the note "Choose your own password".
 
-Note the session ID from the URL.
+- [ ] **4.2** Try to skip it: change the address to `/player`.
+  ✅ Pass if you're sent back to the Change password page.
 
-### 6.2 Mark attendance (compulsory tests 3–4)
+- [ ] **4.3** Fill in the temporary password, then the new password `BelaOwn123` twice. Click **Change password**.
+  ✅ Pass if you land on Bela's dashboard ("Welcome back, Bela").
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 6.2.1 | Click **Present** for Arjun | The row highlights with "Unsaved". The bottom bar shows "1 unsaved change" | ☐ |
-| 6.2.2 | Click **Undo changes** | The selection clears | ☐ |
-| 6.2.3 | Arjun **Present**, Bela **Present**, then **Save attendance** | "Attendance saved." Present 2, Unmarked 1 | ☐ |
-| 6.2.4 | Close session panel | Button disabled: "Mark the remaining 1 player first." | ☐ |
-| 6.2.5 | Change Bela to **Absent** (don't save) | Close panel says "Save your attendance changes first." | ☐ |
-| 6.2.6 | Set Bela back to **Present**, Chen **Absent**, then **Save** | Present 2, Absent 1, Unmarked 0 | ☐ |
-| 6.2.7 | Refresh the page | Marks are kept: Arjun and Bela Present, Chen Absent | ☐ |
+- [ ] **4.4** Log out, then log in with the **old temporary password**.
+  ✅ Pass if it says **"Invalid email or password"**, and `BelaOwn123` works.
 
-### 6.3 Close the session (closed sessions are immutable)
+- [ ] **4.5** Do the same first-login change for **Arjun** (new password `ArjunOwn123`), then **log out**.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 6.3.1 | **Close session** | A warning appears: "This can't be undone" | ☐ |
-| 6.3.2 | **Cancel** | Nothing changes | ☐ |
-| 6.3.3 | **Close session**, then **Yes, close session** | "Session closed. Attendance is now locked." Status **Closed**. The roster is read-only with Present/Absent badges | ☐ |
-| 6.3.4 | Refresh | Still closed. No Present/Absent buttons anywhere | ☐ |
-| 6.3.5 | **API check:** in Window C's console, try to edit the closed session (snippet below) | `"code":"SESSION_CLOSED"` | ☐ |
-| 6.3.6 | **API check:** try to close it again (snippet below) | `"code":"SESSION_CLOSED"` | ☐ |
-
-```js
-// 6.3.5 – replace the two IDs
-await (await fetch("/api/sessions/SESSION_ID/attendance", {
-  method: "POST", headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ records: [{ playerId: "CHEN_ID", status: "PRESENT" }] }),
-})).json()
-
-// 6.3.6
-await (await fetch("/api/sessions/SESSION_ID/close", { method: "POST" })).json()
-```
-
-### 6.4 Eligibility checks via the API
-
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 6.4.1 | Create a second **Cricket** session for **tomorrow's** date, and note its ID | Open, Eligible 3 | ☐ |
-| 6.4.2 | Console: mark **Fiona** in that session (snippet) | `NOT_ELIGIBLE`, "Fiona Football plays Football, not Cricket" | ☐ |
-| 6.4.3 | Console: the same request listing Chen **twice** | Validation error "Each player can appear only once per request" | ☐ |
-| 6.4.4 | Leave this session **open**. Don't mark anyone | | ☐ |
-
-```js
-// 6.4.2 – replace IDs (SESSION2_ID = tomorrow's session)
-await (await fetch("/api/sessions/SESSION2_ID/attendance", {
-  method: "POST", headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ records: [{ playerId: "FIONA_ID", status: "PRESENT" }] }),
-})).json()
-```
-
-### 6.5 Other session cases
-
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 6.5.1 | New session today, sport `Archery` | Page says "No active Archery players". Eligible 0 | ☐ |
-| 6.5.2 | Close it | Closes (no players to mark) | ☐ |
-| 6.5.3 | New session **today**, sport `Football`. Mark Fiona **Present**, then **Save**. **Leave it open** | Present 1, status Open | ☐ |
-| 6.5.4 | Sessions list | Today's Cricket and Archery sessions show **Closed**. Today's Football and tomorrow's Cricket sessions show **Open** with "x of y marked" and a progress bar | ☐ |
-| 6.5.5 | Tabs **Open** / **Closed** and the sport filter | Filter correctly | ☐ |
-| 6.5.6 | Overview | Open sessions 2, Closed sessions 2 | ☐ |
+- [ ] **4.6** **Window 1:** refresh **Players**.
+  ✅ Pass if Arjun and Bela no longer show "Temporary password".
 
 ---
 
-## 7. Phase 5 – Matches and scoring
+## Part 5 – Manage players (edit, deactivate, reset password)
 
-Window C (coach). Go to **Matches**, then **New match**.
+**Window 1:** Players → click **Dev Patel**.
 
-### 7.1 Eligibility in the picker
+- [ ] **5.1** Click **Edit**, change age to `19`, then **Save changes**.
+  ✅ Pass if you see "Changes saved." and the age shows 19.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7.1.1 | Date **today**, sport `cricket` | "Players & scores" lists **only Arjun and Bela**, marked "present". **Chen isn't offered** (absent) | ☐ |
-| 7.1.2 | Change sport to `Football` | Selection clears. Warning **"Close the session first"**, because today's Football session is still open | ☐ |
-| 7.1.3 | Change sport to `Hockey` | "No Hockey session on …" with a **New session** button | ☐ |
-| 7.1.4 | Sport `Cricket`, date **tomorrow** | "Close the session first" (tomorrow's session is open) | ☐ |
+- [ ] **5.2** Click **Edit** again, switch **Active** off, then Save.
+  ✅ Pass if Dev now shows **Inactive**.
 
-### 7.2 Create the match (compulsory tests 5–6)
+- [ ] **5.3** **Window 2:** log in as `dev@test.com` with Dev's temporary password.
+  ✅ Pass if it says **"This account has been disabled"**. (Leave Dev inactive. It's used later.)
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7.2.1 | Date today, sport Cricket, opponent empty, select Arjun, then **Create match** | "Opponent is required". Arjun's row says "Enter a score" | ☐ |
-| 7.2.2 | Opponent `City XI`. Arjun score `55`, Bela `32`. Click **Create match** | Opens the match page "vs City XI". Players 2, Total 87, Top score 55 (Arjun), Average 43.5. Scoreboard: 1 Arjun 55, 2 Bela 32 | ☐ |
-| 7.2.3 | Try a score of `-5` on a new match | "Score must be 0–100000" | ☐ |
+- [ ] **5.4** **Window 2:** log in as **Bela** (`BelaOwn123`) and stay logged in.
 
-Note the match ID from the URL.
+- [ ] **5.5** **Window 1:** open **Bela Singh** → **Reset** → **Generate** → **Set password**. Write down the new temporary password.
+  ✅ Pass if a green box shows Bela's new login details.
 
-### 7.3 Absent player is rejected (compulsory test 7)
+- [ ] **5.6** **Window 2:** refresh the page.
+  ✅ Pass if Bela has been **logged out** (her session ended, because the coach reset her password).
 
-The UI doesn't offer Chen, so prove the **server** rejects him too:
-
-```js
-// Window C console – replace CHEN_ID; use today's date in YYYY-MM-DD form
-await (await fetch("/api/matches", {
-  method: "POST", headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ date: "YYYY-MM-DD", sport: "Cricket", opponent: "Test XI",
-    participants: [{ playerId: "CHEN_ID", score: 10 }] }),
-})).json()
-```
-
-| # | Expected | ✔ |
-| --- | --- | --- |
-| 7.3.1 | `NOT_ELIGIBLE` with "Chen Li was absent on YYYY-MM-DD", and **no** match created (the Matches list is unchanged) | ☐ |
-| 7.3.2 | Same snippet with **FIONA_ID** and sport `Football`: "…was not marked present in a closed Football session…" (her session is open) | ☐ |
-| 7.3.3 | Same snippet with the **Cricket** sport and a match **date of tomorrow**, using Arjun's ID: rejected (tomorrow's session isn't closed) | ☐ |
-
-### 7.4 Edit a match
-
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7.4.1 | Match page, **Edit**: opponent `City XI B`, Arjun 60 | Picker shows Arjun and Bela, already ticked with their scores | ☐ |
-| 7.4.2 | **Save changes** | "Match updated." Total 92, top 60 | ☐ |
-| 7.4.3 | Edit, untick both players, Save | "A match needs at least one player." | ☐ |
-| 7.4.4 | Cancel | Unchanged | ☐ |
-
-### 7.5 Matches list and overview
-
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7.5.1 | Matches list | "vs City XI B", today's date, Cricket, 2 players, top scorer Arjun 60 | ☐ |
-| 7.5.2 | Sport filter **Football** | "No Football matches" | ☐ |
-| 7.5.3 | Overview | Matches 1 | ☐ |
-| 7.5.4 | Close today's **Football** session, then New match: today + Football | Fiona is now offered. You can create a Football match with her | ☐ |
+- [ ] **5.7** Log in as Bela with the **new temporary password**, then change it back to `BelaOwn123`. Log out.
 
 ---
 
-## 7b. Phase 6 – Readiness dashboards
+## Part 6 – Practice session and attendance
 
-Ready = **attendance ≥ 75%** of closed sessions **and ≥ 2 matches played**. It's calculated live from the records you created above.
+A coach creates a practice session, marks each player **Present** or **Absent**, then **closes** the session. Once closed, it can never be changed.
 
-### 7b.1 Build the readiness scenario
+**Window 1:** sidebar → **Sessions** → **New session**.
 
-You need several closed Cricket sessions on **different past dates**, so attendance percentages differ. In Window C, create and **close** these sessions (the date picker lets you choose past dates). Mark exactly as shown:
+- [ ] **6.1** The date is already **today**. Type sport `cricket`.
+  ✅ Pass if the hint below says **"3 active players play Cricket"**. (Dev is inactive and Fiona plays football, so they don't count.)
+
+- [ ] **6.2** Click **Create session**.
+  ✅ Pass if the list shows exactly **Arjun, Bela and Chen**, each with **Present / Absent** buttons, and the cards read Eligible 3, Unmarked 3.
+
+- [ ] **6.3** Click **Present** for Arjun.
+  ✅ Pass if the row is highlighted with "Unsaved", and the bottom says "1 unsaved change".
+
+- [ ] **6.4** Mark **Arjun Present** and **Bela Present**, then click **Save attendance**.
+  ✅ Pass if you see "Attendance saved" and the cards read Present 2, Unmarked 1.
+
+- [ ] **6.5** Look at the **Close session** box.
+  ✅ Pass if the button is greyed out with **"Mark the remaining 1 player first."** You can't close until everyone is marked.
+
+- [ ] **6.6** Mark **Chen Absent** → **Save attendance**. Then refresh the page.
+  ✅ Pass if after the refresh, Arjun and Bela still show Present and Chen shows Absent.
+
+- [ ] **6.7** Click **Close session**, then **Cancel**.
+  ✅ Pass if a warning appears saying **"This can't be undone"**, and Cancel changes nothing.
+
+- [ ] **6.8** Click **Close session** → **Yes, close session**.
+  ✅ Pass if it shows **"Closed"**, the Present/Absent buttons disappear, and each player just shows a Present or Absent label. Refresh: it stays closed.
+
+---
+
+## Part 7 – Record a match
+
+Only players who were **Present** at a **closed** practice session **on the same day** can play in that day's match.
+
+**Window 1:** sidebar → **Matches** → **New match**.
+
+- [ ] **7.1** Date: **today**. Sport: `cricket`.
+  ✅ Pass if the player list shows **only Arjun and Bela**. **Chen is not offered**, because he was absent.
+
+- [ ] **7.2** Change the sport to `Hockey`.
+  ✅ Pass if it says there's **no Hockey session** that day, and offers to create one.
+
+- [ ] **7.3** In a new tab, create a **Football** session for today, mark **Fiona Present**, **Save**, and **don't close it**. Back in the match form, choose sport `Football`.
+  ✅ Pass if it says **"Close the session first"**. Players from an open session can't be picked yet.
+
+- [ ] **7.4** Back to sport `Cricket`. Opponent `City XI`. Tick **Arjun** with score `55` and **Bela** with `32`. Click **Create match**.
+  ✅ Pass if the match page shows **"vs City XI"**, Players 2, Total 87, Top score 55 (Arjun), Average 43.5. The scoreboard lists Arjun first.
+
+- [ ] **7.5** Click **Edit**, change Arjun's score to `60`, then **Save changes**.
+  ✅ Pass if you see "Match updated" and the total is now **92**.
+
+- [ ] **7.6** In **Edit**, untick both players and click **Save changes**.
+  ✅ Pass if it says **"A match needs at least one player."** Click **Cancel**.
+
+- [ ] **7.7** Go to **Matches**.
+  ✅ Pass if the match is listed with top scorer Arjun (60).
+
+---
+
+## Part 8 – Readiness (who is "Ready")
+
+A player is **Ready** when they have **at least 75% attendance** and have played **at least 2 matches**. Only closed sessions count.
+
+First, add a bit more history. **Window 1:** create and **close** three more **Cricket** sessions with **past dates** (change the date in the date picker), marked like this:
 
 | Session date | Arjun | Bela | Chen |
 | --- | --- | --- | --- |
-| today (from section 6) | Present | Present | Absent |
-| today − 1 day | Present | Present | Present |
-| today − 2 days | Present | Absent | Absent |
-| today − 3 days | Absent | Absent | Present |
+| Yesterday | Present | Present | Present |
+| 2 days ago | Present | Absent | Absent |
+| 3 days ago | Absent | Absent | Present |
 
-Then create a second Cricket match on **today − 1 day** with Arjun, Bela and Chen (any scores).
+Then create a **Cricket match dated yesterday**, opponent `Town XI`, with **Arjun, Bela and Chen** (any scores).
 
-Expected totals:
+Now everyone has 4 closed sessions:
 
-| Player | Attendance | Matches | Ready? |
+| Player | Attended | Matches | Should be |
 | --- | --- | --- | --- |
-| Arjun | 3 of 4 = **75%** | 2 | **Ready** (exactly 75%, compulsory test 9) |
-| Bela | 2 of 4 = 50% | 2 | Not ready (attendance below 75%, compulsory test 8) |
+| Arjun | 3 of 4 = **75%** | 2 | **Ready** |
+| Bela | 2 of 4 = 50% | 2 | Not ready (attendance too low) |
 | Chen | 2 of 4 = 50% | 1 | Not ready |
 
-### 7b.2 Coach
+- [ ] **8.1** Sidebar → **Readiness**.
+  ✅ Pass if **Arjun shows Ready** at 75%, with his green bar reaching the 75% marker.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7b.2.1 | Sidebar → **Readiness** | Cards: Players, Ready, Not ready. Arjun shows **Ready** with 75% and a full green bar at the 75% marker | ☐ |
-| 7b.2.2 | Bela's row | **Not ready**, with "Attendance 50% (needs 75%)" | ☐ |
-| 7b.2.3 | Chen's row | "Attendance 50% (needs 75%) · 1 more match needed" | ☐ |
-| 7b.2.4 | Tabs **Ready** / **Not ready**, the sport filter and search | Filter correctly | ☐ |
-| 7b.2.5 | Click Arjun | Player page. The **Performance & readiness** section shows stats, the readiness card, match history and attendance history (4 closed sessions) | ☐ |
-| 7b.2.6 | Open sessions don't count: create a Cricket session for **today + 5 days**, mark Arjun Absent, and **leave it open** | Arjun is still 75% and Ready | ☐ |
-| 7b.2.7 | Overview | "Ready players" shows 1 | ☐ |
+- [ ] **8.2** Look at Bela's and Chen's rows.
+  ✅ Pass if Bela shows **Not ready** with "Attendance 50% (needs 75%)", and Chen shows "Attendance 50% (needs 75%) · 1 more match needed".
 
-### 7b.3 Player (compulsory test 11)
+- [ ] **8.3** Click the **Ready** tab, then the **Not ready** tab.
+  ✅ Pass if Ready shows only Arjun, and Not ready shows the others.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7b.3.1 | Window P: log in as **Arjun** (`ArjunOwn123`) | Dashboard "Welcome back, Arjun", badge **Ready**, his attendance and matches only | ☐ |
-| 7b.3.2 | Log in as **Bela** (change her temporary password first if asked) | Her own data: 50%, **Not ready yet**, with the reason | ☐ |
-| 7b.3.3 | As Bela, open `/api/player/dashboard?playerId=ARJUN_ID` | Still **Bela's** data (the id is ignored) | ☐ |
-| 7b.3.4 | As Bela, open `/api/players/ARJUN_ID/performance` and `/api/scout/players` | `FORBIDDEN` | ☐ |
-| 7b.3.5 | As Bela, open `/scout` and `/coach/readiness` | Redirected to `/player` | ☐ |
+- [ ] **8.4** Click **Arjun**.
+  ✅ Pass if his player page shows a **Performance & readiness** section with his attendance history (4 sessions) and match history (2 matches).
 
-### 7b.4 Scout (compulsory test 10)
+- [ ] **8.5** Create a Cricket session for a **future date**, mark Arjun **Absent**, save, and **don't close it**. Go back to **Readiness**.
+  ✅ Pass if Arjun is **still 75% and Ready**. Open sessions don't count.
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 7b.4.1 | Window P: log in as `scout@academy.test` | **Ready players** list shows **only Arjun** | ☐ |
-| 7b.4.2 | Click Arjun | Detail with readiness, stats and history. **No email or login info** anywhere | ☐ |
-| 7b.4.3 | Open `/scout/players/BELA_ID` | "Player not available" (not Ready) | ☐ |
-| 7b.4.4 | Open `/api/scout/players/BELA_ID` | `NOT_FOUND` | ☐ |
-| 7b.4.5 | Window C: deactivate Arjun. Window P: refresh the scout list | Arjun disappears. "No Ready players yet". **Reactivate Arjun afterwards** | ☐ |
+- [ ] **8.6** Go to **Overview**.
+  ✅ Pass if "Ready players" shows **1**.
 
 ---
 
-## 8. Security and access control (all phases)
+## Part 9 – What a player sees
 
-| # | Step | Expected | ✔ |
-| --- | --- | --- | --- |
-| 8.1 | Window P signed in as **Arjun**: open `/coach/sessions` and `/coach/matches` | Redirected to `/player` | ☐ |
-| 8.2 | Window P (Arjun): open `/api/sessions`, `/api/matches`, `/api/players` | Each returns `"code":"FORBIDDEN"` | ☐ |
-| 8.3 | Window P as **scout@academy.test**: the same three API URLs | `FORBIDDEN` | ☐ |
-| 8.4 | Window P **signed out**: the same three API URLs | `UNAUTHENTICATED` | ☐ |
-| 8.5 | Window P signed out: `/coach/players/<any id>` | Redirected to login | ☐ |
-| 8.6 | Atlas → `sports-academy-test` → `users` collection → any document | `passwordHash` starts with `scrypt$…`. **No plain password anywhere** | ☐ |
-| 8.7 | DevTools → Application → Cookies → `sa_session` | **HttpOnly** is ticked | ☐ |
-| 8.8 | Console: `document.cookie` | Does **not** contain `sa_session` | ☐ |
-| 8.9 | Open `/coach/players/123` and `/coach/sessions/123` | "Player not found" / "Session not found" (no crash) | ☐ |
+Players can only ever see **their own** records.
 
----
+**Window 2:** log in as **Arjun** (`ArjunOwn123`).
 
-## 9. Data check in Atlas (optional)
+- [ ] **9.1** ✅ Pass if Arjun's dashboard shows the **Ready** badge, attendance 75%, 2 matches, his scores, and only his own history.
 
-| # | Collection | Check | ✔ |
-| --- | --- | --- | --- |
-| 9.1 | `players` | Arjun, Bela and Chen have `sport: "Cricket"`. Dev has `isActive: false` | ☐ |
-| 9.2 | `sessions` | Today's Cricket session: `status: "CLOSED"`, `closedAt` set, 3 attendance entries, Chen `ABSENT` | ☐ |
-| 9.3 | `matches` | One Cricket match with 2 participants (Arjun 60, Bela 32) | ☐ |
-| 9.4 | `users` | Each player user has a `player` field pointing at its profile | ☐ |
+- [ ] **9.2** Log out and log in as **Bela** (`BelaOwn123`).
+  ✅ Pass if Bela sees **her own** numbers: 50%, **"Not ready yet"**, and the reason. Nothing about Arjun or Chen appears.
+
+- [ ] **9.3** As Bela, try typing these addresses: `/coach`, `/coach/players`, `/scout`.
+  ✅ Pass if each one sends her back to her own dashboard.
+
+- [ ] **9.4** Look at the sidebar.
+  ✅ Pass if it only shows **My dashboard** and **Password**.
+
+- [ ] **9.5** Log out.
 
 ---
 
-## 10. Compulsory competition test coverage
+## Part 10 – What a scout sees
 
-| # | Competition test | Covered by | Status |
+Scouts join an academy with its **scout join code**, and can only see that academy's players who are **Ready**.
+
+**Window 2:** sign-up page (**Sign in** → **Create or join an academy**) → **Join an academy**.
+
+- [ ] **10.1** Type the **Scout join code** from your notepad.
+  ✅ Pass if the green box says **"You're joining Test Cricket Academy as a Scout"**.
+
+- [ ] **10.2** Finish signing up: `Scout Sam`, `sam@test.com`, password `ScoutSam123` (twice) → **Join academy**.
+  ✅ Pass if you land on **Ready players**, and the list shows **only Arjun**.
+
+- [ ] **10.3** Click **Arjun**.
+  ✅ Pass if you see his readiness, stats and match history, and **no email address or login details anywhere**.
+
+- [ ] **10.4** Try opening `/coach/players`.
+  ✅ Pass if you're sent back to Ready players.
+
+- [ ] **10.5** **Window 1 (coach):** set Arjun to **Inactive** (Players → Arjun → Edit → Active off → Save). **Window 2:** refresh.
+  ✅ Pass if Arjun **disappears** from the scout's list ("No Ready players yet").
+
+- [ ] **10.6** **Window 1:** set Arjun back to **Active**. **Window 2:** refresh.
+  ✅ Pass if Arjun is back.
+
+- [ ] **10.7** **Window 1:** sidebar → **Academy**.
+  ✅ Pass if **Scout Sam** is listed under "Coaches & scouts".
+
+---
+
+## Part 11 – Final checks
+
+- [ ] **11.1** **Logging out works:** in either window, click the log-out icon, then try to open `/coach`.
+  ✅ Pass if you're sent to the Sign in page.
+
+- [ ] **11.2** **Changing your own password:** log in as the coach → sidebar **Password** → change it.
+  ✅ Pass if it works and the old password no longer does.
+
+- [ ] **11.3** **Phone size:** make the browser window narrow (or open the site on your phone).
+  ✅ Pass if the sidebar turns into a **☰ menu** button at the top. Pages remain readable, and tables can be scrolled sideways.
+
+- [ ] **11.4** **Wrong links:** open `/coach/players/123`.
+  ✅ Pass if it says "Player not found" instead of crashing.
+
+---
+
+## Part 12 – Academies stay separate
+
+Each academy's players, sessions, matches and readiness are private.
+
+**Window 2:** log out. Then sign up → **Create an academy**: `Other Academy`, `Olga Owner`, `olga@test.com`, password `OlgaOwner123`.
+
+- [ ] **12.1** Look at **Players**, **Sessions**, **Matches** and **Readiness**.
+  ✅ Pass if all are **empty**. Olga can't see anything from Test Cricket Academy.
+
+- [ ] **12.2** **Window 1:** open Arjun's player page and copy the address from the address bar. **Window 2:** paste it.
+  ✅ Pass if Olga sees **"Player not found"**, even with the exact address.
+
+- [ ] **12.3** **Window 2:** create a **Cricket** session for today.
+  ✅ Pass if the attendance list says there are **no active Cricket players** (Arjun, Bela and Chen belong to the other academy).
+
+- [ ] **12.4** **Window 2:** sidebar → **Academy**.
+  ✅ Pass if Olga has her **own, different** join codes, and only she is listed.
+
+- [ ] **12.5** **Window 1:** Academy → **Scout join code** → **Generate a new code** → confirm. Then in Window 2, log out, go to sign-up → **Join an academy**, and type the **old** scout code from your notepad.
+  ✅ Pass if it says **"This join code doesn't match any academy"**. Old codes stop working as soon as a new one is made.
+
+- [ ] **12.6** *(Optional)* Join Test Cricket Academy as a **second coach** using the coach join code (e.g. `coach2@test.com`).
+  ✅ Pass if the second coach sees the same players as Coach Kim. On their **Academy** page it says join codes are managed by the Head Coach, with no codes shown.
+
+---
+
+## The 11 official competition tests
+
+All are covered by the steps above:
+
+| # | Competition test | Where you tested it | ✔ |
 | --- | --- | --- | --- |
-| 1 | Create three players | 5.2 | ☐ |
-| 2 | Create one practice session | 6.1 | ☐ |
-| 3 | Mark two Present, one Absent | 6.2 | ☐ |
-| 4 | Absent player recorded correctly | 6.2.7, 9.2 | ☐ |
-| 5 | Create a same-day match | 7.2 | ☐ |
-| 6 | Two present players can participate | 7.2.2 | ☐ |
-| 7 | Absent player rejected | 7.1.1, 7.3.1 | ☐ |
-| 8 | Attendance below 75% is not Ready | 7b.2.2 | ☐ |
-| 9 | Exactly 75% and 2 matches is Ready | 7b.2.1 | ☐ |
-| 10 | Scout sees only Ready players | 7b.4.1–7b.4.4 | ☐ |
-| 11 | Player sees only their own records | 7b.3.1–7b.3.4 | ☐ |
+| 1 | Create three players | Part 3 | ☐ |
+| 2 | Create one practice session | 6.1–6.2 | ☐ |
+| 3 | Mark two players Present and one Absent | 6.4–6.6 | ☐ |
+| 4 | The absent player is recorded correctly | 6.6, 6.8 | ☐ |
+| 5 | Create a same-day match | 7.4 | ☐ |
+| 6 | The two present players can take part | 7.1, 7.4 | ☐ |
+| 7 | The absent player is rejected | 7.1 | ☐ |
+| 8 | Attendance below 75% is not Ready | 8.2 | ☐ |
+| 9 | Exactly 75% with 2 matches is Ready | 8.1 | ☐ |
+| 10 | The scout sees only Ready players | 10.2–10.5 | ☐ |
+| 11 | A player sees only their own records | 9.1–9.3 | ☐ |
 
-Extra required checks:
+---
 
-| Check | Covered by | Status |
+## Live site: extra checks
+
+Do these once the app is deployed on Vercel.
+
+- [ ] **L.1** The live link opens over **https://** (a padlock in the address bar).
+- [ ] **L.2** System status on the home page shows **Operational**.
+- [ ] **L.3** Parts 2–12 work exactly as they did locally.
+- [ ] **L.3b** If the live database already had data from before academies existed, the person who deployed ran `npm run migrate:academy` once (against the live database). Old accounts can sign in and see their data.
+- [ ] **L.4** Open the live site on a **phone** and log in as a player. The dashboard is readable.
+- [ ] **L.5** Refresh any page while logged in. You stay logged in.
+- [ ] **L.6** Leave the site for 10 minutes, come back and click around. It still works (the first load may be a little slower).
+
+---
+
+## Good to know (these are not bugs)
+
+- A practice session **can't be edited or deleted** after it's created. If you make a mistake, just leave it open: it doesn't count until it's closed.
+- A closed session can **never** be changed. That's on purpose.
+- A match's **date and sport** can't be changed after it's created, but the opponent, players and scores can.
+- Players **can't sign up** by themselves. Their coach creates their account.
+- Anyone can create a new academy. That's on purpose: a new academy starts empty and can't see any other academy.
+- One email address belongs to one academy. To be in two academies, use two emails.
+- Only the **Head Coach** (the person who created the academy) can see and change the join codes.
+
+---
+
+## Problems found
+
+If any step fails, add a row:
+
+| Step | What I did | What I expected | What actually happened |
+| --- | --- | --- | --- |
+| | | | |
+
+Take a screenshot of the problem if you can, and send it with the step number.
+
+**Tested by:** ____________ **Date:** ____________ **Site:** Local / Live **Problems found:** ____
+
+---
+
+<details>
+<summary><b>Optional: extra checks for technical testers</b></summary>
+
+These prove the **server** itself blocks bad actions, even if someone bypasses the screens. Visit each address in the browser while logged in as the role shown. The page shows text, so look for the word in **bold**.
+
+| Logged in as | Open this address | You should see |
 | --- | --- | --- |
-| Unauthenticated API access | 3.13, 8.4 | ☐ |
-| Unauthorized role access | 3.11, 8.2, 8.3 | ☐ |
-| Player accessing another player's data | 7b.3.3, 7b.3.4 | ☐ |
-| Editing a closed session | 6.3.5 | ☐ |
-| Duplicate attendance / participation | 6.4.3, and the automated tests | ☐ |
-| Invalid request data | 5.1, 7.2.3, 6.4.2 | ☐ |
+| Nobody (logged out) | `/api/players` | **UNAUTHENTICATED** |
+| Player (Bela) | `/api/players` | **FORBIDDEN** |
+| Player (Bela) | `/api/scout/players` | **FORBIDDEN** |
+| Scout | `/api/coach/dashboard` | **FORBIDDEN** |
+| Scout | `/api/scout/players/` + Bela's id (from her coach page address) | **NOT_FOUND** (she isn't Ready) |
+| Olga (Other Academy) | `/api/players/` + Arjun's id | **NOT_FOUND** (other academy) |
+| Anyone | `/api/health` | `"status":"connected"` |
 
----
+You can also run the automated test suite in the project folder: `npm test` should report **all tests passed**.
 
-## 11. Known limitations (not bugs)
-
-- Sessions can't be edited or deleted. A mistaken open session can be left unused, because it only counts once closed.
-- There's no rate limiting on login attempts yet (planned for Phase 7 if time allows).
-
----
-
-## 12. Results log
-
-Copy a row for every failed step.
-
-| Step # | What you did | What you expected | What happened | Screenshot / console output |
-| --- | --- | --- | --- | --- |
-| | | | | |
-
-**Sign-off:** Tested by ________ on ________ · Total failures: ____
+</details>

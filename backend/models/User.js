@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { ROLES } from "@/backend/utils/constants";
 import { PASSWORD_HASH_PATTERN } from "@/backend/utils/password";
-import { toJSONTransform } from "@/backend/utils/schemaHelpers";
+import { academyField, toJSONTransform } from "@/backend/utils/schemaHelpers";
 
 /**
  * Login account for Coach, Player and Scout.
@@ -10,6 +10,9 @@ import { toJSONTransform } from "@/backend/utils/schemaHelpers";
  */
 const userSchema = new mongoose.Schema(
   {
+    academy: academyField,
+    // The academy creator; only the Head Coach manages join codes and the academy name.
+    isHeadCoach: { type: Boolean, default: false },
     name: {
       type: String,
       required: [true, "Name is required"],

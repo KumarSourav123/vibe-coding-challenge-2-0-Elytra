@@ -55,8 +55,8 @@ Error:
 | `UNAUTHENTICATED` | 401 | No valid session cookie |
 | `ACCOUNT_DISABLED` | 403 | Correct credentials, but `isActive` is false |
 | `PASSWORD_CHANGE_REQUIRED` | 403 | User has a temporary password and must change it first |
-| `REGISTRATION_DISABLED` | 403 | No access code is configured for that role |
-| `INVALID_ACCESS_CODE` | 403 | Wrong registration access code |
+| `INVALID_JOIN_CODE` | 400 | Academy join code doesn't match any academy (`field: "joinCode"`) |
+| `ACADEMY_REQUIRED` | 403 | Account isn't linked to an academy (run `npm run migrate:academy`) |
 | `INVALID_CURRENT_PASSWORD` | 400 | `currentPassword` is wrong (`field: "currentPassword"`) |
 | `NO_LOGIN_ACCOUNT` | 409 | Player profile has no linked login account |
 | `NO_PLAYER_PROFILE` | 404 | Signed-in PLAYER account is not linked to a player profile |
@@ -111,18 +111,32 @@ Built without any auth SDK, using only Node/Web Crypto:
 
 `playerId` is the linked `Player` id for PLAYER users, otherwise `null`. `passwordHash` is never returned.
 
-### 1.6 Account creation (Phase 3 – `IMPLEMENTED`)
+### 1.6 Academies and account creation (multi-academy – `IMPLEMENTED`)
 
-| Role | How an account is created |
-| --- | --- |
-| PLAYER | Only by a Coach, via `POST /api/players` (profile + login in one step, temporary password). There is **no** player self-registration. |
-| COACH | Self-registration via `POST /api/auth/register` with the access code in `COACH_SIGNUP_CODE` |
-| SCOUT | Self-registration via `POST /api/auth/register` with the access code in `SCOUT_SIGNUP_CODE` |
-| Any | `npm run seed` demo accounts (development) |
+The app hosts **many academies**. Each academy's data is completely separate.
 
-If a role's access code env var is unset or shorter than 8 characters, registration for that role is disabled.
+| Who | How the account is created | Belongs to |
+| --- | --- | --- |
+| **Head Coach** | `POST /api/auth/register-academy`: creates a new academy (anyone can) and becomes its Head Coach | The new academy |
+| Coach | `POST /api/auth/register` with the academy's **coach join code** | That academy |
+| Scout | `POST /api/auth/register` with the academy's **scout join code** | That academy |
+| Player | Created by a coach via `POST /api/players` (no self-registration) | The coach's academy |
 
-**One shared academy:** every Coach can see and manage every player, regardless of which Coach created them.
+**Join codes:**
+- Each academy has two: `coachJoinCode` and `scoutJoinCode`, in the form `XXXX-XXXX-XXXX`. They're random, unique and case-insensitive. Spaces and dashes are optional when typing.
+- **The code decides the role.** There's no role field on join.
+- Only the Head Coach can see or regenerate codes. Regenerating makes the old code stop working immediately.
+
+**Isolation rules (enforced on the server):**
+- Every User, Player, Session and Match has an `academy`.
+- **Every query is filtered by the signed-in user's academy**, taken from the session and never from the request.
+- A record from another academy behaves exactly like an unknown id (404 `NOT_FOUND`, or `NOT_ELIGIBLE` "Player not found").
+- Scouts see Ready players of **their own** academy only.
+- **One email = one account = one academy.** Emails are unique across the whole app, so login needs no academy picker.
+
+**Session user object** gains `"academy": { "id": "…", "name": "Delhi Cricket Academy" }` and `"isHeadCoach": true|false`.
+
+**Existing data:** `npm run migrate:academy` puts every record without an academy into an academy named "Sports Academy". The earliest coach becomes its Head Coach. Until then, affected accounts get 403 `ACADEMY_REQUIRED`.
 
 ---
 
@@ -280,28 +294,82 @@ Returned when there is no cookie, the token is tampered with or expired, the use
 
 ---
 
-### 2.5 `POST /api/auth/register` – `IMPLEMENTED` (Phase 3)
+### 2.5 `POST /api/auth/register` (join an academy) – `IMPLEMENTED`
 
 | Item | Value |
 | --- | --- |
-| Purpose | Self-registration for Coach and Scout, gated by an access code. Logs the new user in. |
-| Request body | `{ "name": "Coach Kim", "email": "kim@academy.test", "password": "secret123", "role": "COACH", "accessCode": "…" }` |
+| Purpose | Coach or Scout joins an existing academy with its join code. Logs the new user in |
+| Request body | `{ "joinCode": "K7P2-9QX4-M3T8", "name": "Coach Kim", "email": "kim@academy.test", "password": "secret123" }` |
 | Authentication | None (public) |
-| Required role | N/A. `role` must be `COACH` or `SCOUT`; `PLAYER` is rejected (players are created by a Coach) |
-| Validation | `name` 2–100 chars, `email` valid, `password` 8–128 chars, `role` ∈ {COACH, SCOUT}, `accessCode` required string |
-| Backend owner | Backend (`app/api/auth/register/route.js`, `authService.registerUser`, `backend/utils/accessCode.js`) |
-| Frontend consumer | `authApi.register()` → `RegisterForm` on `/register` |
+| Role | Decided by the code: the coach join code → COACH, the scout join code → SCOUT |
+| Validation | `joinCode` required. `name` 2–100 chars. `email` valid. `password` 8–128 chars |
+| Frontend consumer | `authApi.register()` → "Join an academy" on `/register` |
 
-**201** (+ `Set-Cookie: sa_session=…`): same `data` as login: `{ user, homePath }`. Message `Account created`.
+**201** (+ cookie): `{ user, homePath }` with message `Account created`.
 
-| Status | Code | When |
-| --- | --- | --- |
-| 400 | `INVALID_JSON` / `INVALID_FIELD` | Bad body or fields (including `role: "PLAYER"`) |
-| 403 | `REGISTRATION_DISABLED` | No code configured for that role |
-| 403 | `INVALID_ACCESS_CODE` | Wrong code (checked before email uniqueness) |
-| 409 | `DUPLICATE` | Email already registered (`field: "email"`) |
+**Errors:** 400 `INVALID_FIELD`, 400 `INVALID_JOIN_CODE` (checked before email uniqueness), 409 `DUPLICATE` (email).
 
-**Test scenarios:** coach and scout register with correct codes, get a cookie and land on their home. Wrong code → 403, no user created. Code env unset → 403 `REGISTRATION_DISABLED`. `role: PLAYER` → 400. Duplicate email → 409. Weak password → 400.
+---
+
+### 2.5a `POST /api/auth/register-academy` – `IMPLEMENTED`
+
+| Item | Value |
+| --- | --- |
+| Purpose | Create a new academy and its Head Coach account. Logs them in |
+| Request body | `{ "academyName": "Delhi Cricket Academy", "name": "Coach Kim", "email": "kim@academy.test", "password": "secret123" }` |
+| Authentication | None (public; anyone may create an academy) |
+| Validation | `academyName` 2–100 chars. Others as for 2.5 |
+| Effect | Creates an Academy with fresh coach and scout join codes, plus a COACH user with `isHeadCoach: true`. If the user can't be created, the academy is removed |
+| Frontend consumer | `authApi.registerAcademy()` → "Create an academy" on `/register` |
+
+**201** (+ cookie): `{ user, homePath: "/coach" }` with message `Academy created`. **Errors:** 400 `INVALID_FIELD`, 409 `DUPLICATE` (email).
+
+---
+
+### 2.5b `GET /api/academies/lookup?code=` – `IMPLEMENTED`
+
+Public preview for the join form. **200**: `{ "academy": { "name": "Delhi Cricket Academy" }, "role": "COACH" }`. **400** `INVALID_JOIN_CODE` for an unknown or malformed code. It reveals only the academy name and role.
+
+---
+
+### 2.5c `GET /api/academy` – `IMPLEMENTED`
+
+| Item | Value |
+| --- | --- |
+| Purpose | The signed-in coach's academy, its members, and (Head Coach only) its join codes |
+| Authentication / role | Required / COACH |
+
+**200**
+
+```json
+{
+  "academy": { "id": "…", "name": "Delhi Cricket Academy", "createdAt": "…" },
+  "members": [ { "id": "…", "name": "Coach Kim", "email": "kim@academy.test", "role": "COACH", "isHeadCoach": true } ],
+  "joinCodes": { "coach": "K7P2-9QX4-M3T8", "scout": "M3T8-2WLF-H6RD" }
+}
+```
+
+- `members` lists the academy's coaches and scouts (players are managed under Players).
+- `joinCodes` is `null` for coaches who aren't the Head Coach.
+
+---
+
+### 2.5d `PATCH /api/academy` – `IMPLEMENTED`
+
+Rename the academy. Body `{ "name": "…" }` (2–100 chars). **Head Coach only** (403 `FORBIDDEN` otherwise). **200**: same shape as 2.5c.
+
+---
+
+### 2.5e `POST /api/academy/join-codes` – `IMPLEMENTED`
+
+Regenerate one join code. Body `{ "role": "COACH" | "SCOUT" }`. **Head Coach only.** The old code stops working at once, and existing accounts are unaffected. **200**: same shape as 2.5c.
+
+**Test scenarios for 1.6 and 2.5–2.5e** (`tests/backend/academy.integration.test.js`):
+- Create an academy → Head Coach session and two codes.
+- Join as coach or scout via code. Wrong code → 400. Lookup preview.
+- Regenerating a code invalidates the old one.
+- Rename. A non-Head Coach gets 403 for codes, rename and regenerate.
+- **Isolation:** academy B can't list, read, edit, mark or select academy A's players, sessions and matches. Scout B never sees A's Ready players. A's records → 404 for B.
 
 ---
 
@@ -791,6 +859,35 @@ Scout view of one Ready player (the player performance detail). A player who is 
 
 ---
 
+### 2.27 `GET /api/evaluation` – `IMPLEMENTED` (competition judging)
+
+| Item | Value |
+| --- | --- |
+| Purpose | Let judges copy-paste the demo academy's join codes and the demo logins |
+| Enabled by | Server env `EVALUATION_MODE=true` (exactly). Otherwise **404 `NOT_FOUND`**, as if the endpoint didn't exist |
+| Authentication | None (public while enabled) |
+| Academy shown | `EVALUATION_ACADEMY_NAME` (default "Demo Academy", created by `npm run seed`) |
+| Frontend consumer | `EvaluationPanel` on `/login` (demo logins with "Use" buttons) and `/register` → Join (codes with "Use") |
+
+**200**
+
+```json
+{
+  "academy": { "name": "Demo Academy" },
+  "joinCodes": { "coach": "2SAD-YHMF-JS8Y", "scout": "R8V9-MRT9-N6NK" },
+  "demoAccounts": [ { "role": "COACH", "name": "Coach Demo", "email": "coach@academy.test" } ],
+  "demoPassword": "<SEED_PASSWORD>"
+}
+```
+
+- `academy` and `joinCodes` are `null` if that academy doesn't exist.
+- `demoAccounts` lists only the seeded demo emails that exist and are active in that academy.
+- **Never** includes `MONGODB_URI`, `AUTH_SECRET`, password hashes, or any non-demo account.
+
+**Turn it off after judging** (`EVALUATION_MODE=false`, then redeploy). Then rotate the demo academy's join codes from its Academy page.
+
+---
+
 ## 3. Proposed endpoints
 
 None. Every endpoint in the original plan is now `IMPLEMENTED`. New endpoints (for example, from the surprise requirement) start here as `DRAFT`.
@@ -816,6 +913,6 @@ These must be confirmed (or changed by official requirements) before the phase t
 | Q13 | Future dates | Sessions may be created for any date (planning ahead). Attendance and closing aren't restricted by date (timezone-safe). Revisit if a rule is announced | Phase 6 |
 | Q14 | Mistaken sessions | There's no edit or delete for sessions yet. A wrongly created OPEN session can be left unused; it doesn't count until closed | Phase 7 |
 | Q8 | Player accounts | **Decided (Phase 3):** the Coach creates the player's login together with the profile (email + temporary password). The player must change it on first login. One `User` per `Player` (unique index) | ✅ |
-| Q9 | Self-registration | **Decided (Phase 3):** Coach and Scout self-register with an access code. Players can't self-register | ✅ |
-| Q10 | Academy scope | **Decided (Phase 3):** one shared academy. Every Coach sees and manages all players | ✅ |
+| Q9 | Self-registration | **Updated (multi-academy):** anyone can create an academy (becoming its Head Coach). Coaches and scouts join with that academy's join code. Players can't self-register | ✅ |
+| Q10 | Academy scope | **Updated (multi-academy):** many academies, fully isolated. Within an academy, every coach sees and manages all of its players. Scouts are per academy. One email = one academy | ✅ |
 | Q11 | Brute force | There's no login or access-code rate limiting yet (serverless memory isn't shared). Revisit in Phase 7 if time allows | Phase 7 |

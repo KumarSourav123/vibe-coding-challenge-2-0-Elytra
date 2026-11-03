@@ -12,9 +12,9 @@ export const runtime = "nodejs";
 /** GET /api/players - see docs/API_CONTRACTS.md §2.8 */
 export async function GET(request) {
   try {
-    await requireRole(request, ROLES.COACH);
+    const coach = await requireRole(request, ROLES.COACH);
     const filters = validatePlayerQuery(request.nextUrl.searchParams);
-    const players = await listPlayers(filters);
+    const players = await listPlayers(filters, coach.academy);
     return successResponse({ players, count: players.length }, "Players fetched");
   } catch (error) {
     return handleRouteError(error);

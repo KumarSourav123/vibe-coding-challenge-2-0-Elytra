@@ -7,6 +7,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 
 /**
  * Practice sessions and attendance (docs/API_CONTRACTS.md §2.12-2.16).
+ * Scoped to one academy: other academies' sessions and players look "not found".
  * Callers must already have checked the COACH role.
  *
  * Writes use a compare-and-set on { status: OPEN, __v } so a closed session
@@ -26,17 +27,17 @@ const conflict = () =>
     { code: "CONFLICT", message: "The session was changed by another request. Reload and try again" },
   ]);
 
-/** Active players whose sport matches - the session's eligible roster (Q1). */
-export function findEligiblePlayers(sport) {
-  return Player.find({ sport, isActive: true }).sort({ name: 1, _id: 1 });
+/** Active players of the academy whose sport matches - the session's eligible roster (Q1). */
+export function findEligiblePlayers(sport, academyId) {
+  return Player.find({ academy: academyId, sport, isActive: true }).sort({ name: 1, _id: 1 });
 }
 
-async function findSessionOrThrow(id) {
+async function findSessionOrThrow(id, academyId) {
   if (!mongoose.isValidObjectId(id)) {
     throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid session id" }]);
   }
   await connectToDatabase();
-  const session = await Session.findById(id);
+  const session = await Session.findOne({ _id: id, academy: academyId });
   if (!session) throw notFound();
   return session;
 }
@@ -98,12 +99,12 @@ async function toSessionDetail(session) {
   const isOpen = session.status === SESSION_STATUS.OPEN;
   const records = new Map(session.attendance.map((r) => [String(r.player), r]));
 
-  const eligible = isOpen ? await findEligiblePlayers(session.sport) : [];
+  const eligible = isOpen ? await findEligiblePlayers(session.sport, session.academy) : [];
   const eligibleIds = new Set(eligible.map((p) => String(p._id)));
 
   // Players with a record who are not (or no longer) in the eligible list.
   const otherIds = [...records.keys()].filter((id) => !eligibleIds.has(id));
-  const others = otherIds.length ? await Player.find({ _id: { $in: otherIds } }) : [];
+  const others = otherIds.length ? await Player.find({ _id: { $in: otherIds }, academy: session.academy }) : [];
   const othersById = new Map(others.map((p) => [String(p._id), p]));
 
   const roster = [
@@ -126,14 +127,14 @@ async function toSessionDetail(session) {
 
 export async function createSession({ date, sport }, coach) {
   await connectToDatabase();
-  const session = await Session.create({ date, sport, createdBy: coach._id });
+  const session = await Session.create({ academy: coach.academy, date, sport, createdBy: coach._id });
   return toSessionDetail(session);
 }
 
 /** @param {{ status: "open"|"closed"|"all", sport: string|null }} filters */
-export async function listSessions({ status, sport }) {
+export async function listSessions({ status, sport }, academyId) {
   await connectToDatabase();
-  const query = {};
+  const query = { academy: academyId };
   if (status !== "all") query.status = status === "open" ? SESSION_STATUS.OPEN : SESSION_STATUS.CLOSED;
   if (sport) query.sport = sport;
 
@@ -143,15 +144,15 @@ export async function listSessions({ status, sport }) {
   const openSports = [...new Set(sessions.filter((s) => s.status === SESSION_STATUS.OPEN).map((s) => s.sport))];
   const eligibleBySport = new Map(openSports.map((s) => [s, new Set()]));
   if (openSports.length) {
-    const players = await Player.find({ sport: { $in: openSports }, isActive: true }).select("_id sport");
+    const players = await Player.find({ academy: academyId, sport: { $in: openSports }, isActive: true }).select("_id sport");
     for (const p of players) eligibleBySport.get(p.sport).add(String(p._id));
   }
 
   return sessions.map((s) => toSessionDTO(s, eligibleBySport.get(s.sport) ?? new Set()));
 }
 
-export async function getSession(id) {
-  return toSessionDetail(await findSessionOrThrow(id));
+export async function getSession(id, academyId) {
+  return toSessionDetail(await findSessionOrThrow(id, academyId));
 }
 
 /**
@@ -159,11 +160,12 @@ export async function getSession(id) {
  * eligible, nothing is saved and every offending entry is reported.
  * @param {Array<{ playerId: string, status: string }>} records
  */
-export async function markAttendance(id, records) {
-  const session = await findSessionOrThrow(id);
+export async function markAttendance(id, records, academyId) {
+  const session = await findSessionOrThrow(id, academyId);
   if (session.status === SESSION_STATUS.CLOSED) throw sessionClosed();
 
-  const players = await Player.find({ _id: { $in: records.map((r) => r.playerId) } });
+  // Players of other academies are not found, exactly like unknown ids.
+  const players = await Player.find({ _id: { $in: records.map((r) => r.playerId) }, academy: session.academy });
   const playersById = new Map(players.map((p) => [String(p._id), p]));
 
   const errors = [];
@@ -190,12 +192,12 @@ export async function markAttendance(id, records) {
 }
 
 /** Close the session once every eligible player is marked. Irreversible. */
-export async function closeSession(id) {
-  const session = await findSessionOrThrow(id);
+export async function closeSession(id, academyId) {
+  const session = await findSessionOrThrow(id, academyId);
   if (session.status === SESSION_STATUS.CLOSED) throw sessionClosed();
 
   const markedIds = new Set(session.attendance.map((r) => String(r.player)));
-  const missing = (await findEligiblePlayers(session.sport)).filter((p) => !markedIds.has(String(p._id)));
+  const missing = (await findEligiblePlayers(session.sport, session.academy)).filter((p) => !markedIds.has(String(p._id)));
   if (missing.length) {
     throw new AppError(
       `Mark every eligible player before closing (${missing.length} unmarked)`,

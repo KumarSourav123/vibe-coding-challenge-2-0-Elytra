@@ -67,7 +67,7 @@ Every phase ends with: `npm run lint && npm test && npm run build` passing, the 
 **Delivered (with the team's decisions):**
 - One shared academy.
 - The Coach creates the player profile **and** login together, with a temporary password. The player must change it at first sign-in, and the Coach can reset it later.
-- Coach and Scout self-register at `/register` with access codes (`COACH_SIGNUP_CODE`, `SCOUT_SIGNUP_CODE`).
+- Coach and Scout self-register at `/register` with access codes. (Later replaced by per-academy join codes; see Multi-academy below.)
 - Any user can change their password at `/account/password`. A password change or reset signs out all other sessions (`sessionVersion`).
 - Sport names are normalized everywhere.
 
@@ -159,6 +159,17 @@ Every phase ends with: `npm run lint && npm test && npm run build` passing, the 
 **Testing:** compulsory tests 8–11. Exactly 75% with 2 matches → Ready. Below 75% → not Ready. A player cannot read another player's data. A scout never receives non-Ready players.
 
 ---
+
+## Multi-academy (added after Phase 6) ✅
+
+**Objective:** many academies on one deployment, each with fully private data.
+
+**Delivered:**
+- An `Academy` model with per-academy coach and scout join codes, and an `academy` field on User, Player, Session and Match.
+- `POST /api/auth/register-academy` (create academy + Head Coach), `POST /api/auth/register` (join with code), `GET /api/academies/lookup`, `GET/PATCH /api/academy`, `POST /api/academy/join-codes`.
+- **Every service query is scoped by the signed-in user's academy.** Cross-academy ids return 404.
+- **UI:** `/register` (Create / Join tabs with live code preview), `/coach/academy` (name, codes, members), academy name in the sidebar.
+- `npm run migrate:academy` for existing data.
 
 ## Phase 7 – Testing, UI and Deployment
 

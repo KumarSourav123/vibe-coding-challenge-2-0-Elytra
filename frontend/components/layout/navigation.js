@@ -7,6 +7,7 @@ export const NAV_BY_ROLE = {
     { href: "/coach/sessions", label: "Sessions", icon: "calendar" },
     { href: "/coach/matches", label: "Matches", icon: "trophy" },
     { href: "/coach/readiness", label: "Readiness", icon: "target" },
+    { href: "/coach/academy", label: "Academy", icon: "shield" },
   ],
   PLAYER: [{ href: "/player", label: "My dashboard", icon: "overview", exact: true }],
   SCOUT: [{ href: "/scout", label: "Ready players", icon: "target" }],

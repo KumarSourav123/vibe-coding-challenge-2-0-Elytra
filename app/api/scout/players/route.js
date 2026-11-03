@@ -11,8 +11,8 @@ export const runtime = "nodejs";
 /** GET /api/scout/players - Ready players only, see docs/API_CONTRACTS.md §2.25 */
 export async function GET(request) {
   try {
-    await requireRole(request, ROLES.SCOUT);
-    const players = await listReadyPlayers(validateScoutQuery(request.nextUrl.searchParams));
+    const scout = await requireRole(request, ROLES.SCOUT);
+    const players = await listReadyPlayers(validateScoutQuery(request.nextUrl.searchParams), scout.academy);
     return successResponse({ players, count: players.length }, "Ready players fetched");
   } catch (error) {
     return handleRouteError(error);

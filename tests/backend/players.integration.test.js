@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createAcademy } from "@/backend/services/academyService";
 import { GET as meRoute } from "@/app/api/auth/me/route";
 import { POST as resetPasswordRoute } from "@/app/api/players/[id]/reset-password/route";
 import { GET as getPlayerRoute, PATCH as patchPlayerRoute } from "@/app/api/players/[id]/route";
@@ -14,6 +15,7 @@ const ctx = (id) => ({ params: Promise.resolve({ id }) });
 // Player management API against a real in-memory MongoDB (docs/API_CONTRACTS.md §2.7-2.11).
 describe("players API", () => {
   let mongo;
+  let academy;
   let coachCookie;
   let secondCoachCookie;
   let scoutCookie;
@@ -38,9 +40,10 @@ describe("players API", () => {
 
   beforeAll(async () => {
     mongo = await startTestDatabase("sports-academy-players-test");
-    await createUser({ name: "Coach A", email: "coach.a@academy.test", password: PASSWORD, role: ROLES.COACH });
-    await createUser({ name: "Coach B", email: "coach.b@academy.test", password: PASSWORD, role: ROLES.COACH });
-    await createUser({ name: "Scout", email: "scout@academy.test", password: PASSWORD, role: ROLES.SCOUT });
+    academy = await createAcademy("Test Academy");
+    await createUser({ academy: academy._id, name: "Coach A", email: "coach.a@academy.test", password: PASSWORD, role: ROLES.COACH });
+    await createUser({ academy: academy._id, name: "Coach B", email: "coach.b@academy.test", password: PASSWORD, role: ROLES.COACH });
+    await createUser({ academy: academy._id, name: "Scout", email: "scout@academy.test", password: PASSWORD, role: ROLES.SCOUT });
     coachCookie = (await loginAs("coach.a@academy.test", PASSWORD)).cookie;
     secondCoachCookie = (await loginAs("coach.b@academy.test", PASSWORD)).cookie;
     scoutCookie = (await loginAs("scout@academy.test", PASSWORD)).cookie;
@@ -273,7 +276,7 @@ describe("players API", () => {
     });
 
     it("returns 409 NO_LOGIN_ACCOUNT for a profile without a login", async () => {
-      const orphan = await Player.create({ name: "No Login", age: 20, sport: "Cricket" });
+      const orphan = await Player.create({ academy: academy._id, name: "No Login", age: 20, sport: "Cricket" });
       const res = await reset(String(orphan._id), { temporaryPassword: "Reset@5678" });
       expect(res.status).toBe(409);
       expect((await res.json()).errors[0].code).toBe("NO_LOGIN_ACCOUNT");

@@ -8,7 +8,7 @@ import { validationError } from "../helpers/validation";
 const id = () => new mongoose.Types.ObjectId();
 
 describe("User model", () => {
-  const valid = { name: "Coach Carter", email: "COACH@Example.com ", passwordHash: FAKE_PASSWORD_HASH, role: ROLES.COACH };
+  const valid = { academy: id(), name: "Coach Carter", email: "COACH@Example.com ", passwordHash: FAKE_PASSWORD_HASH, role: ROLES.COACH };
 
   it("accepts a valid user and normalises email", async () => {
     const user = new User(valid);
@@ -43,23 +43,23 @@ describe("User model", () => {
 describe("Player model", () => {
   it("requires name, age and sport", async () => {
     const err = await validationError(new Player({}));
-    expect(Object.keys(err.errors).sort()).toEqual(["age", "name", "sport"]);
+    expect(Object.keys(err.errors).sort()).toEqual(["academy", "age", "name", "sport"]);
   });
 
   it("rejects non-integer or out-of-range age", async () => {
-    const fractional = await validationError(new Player({ name: "Ann", age: 12.5, sport: "Cricket" }));
+    const fractional = await validationError(new Player({ academy: id(), name: "Ann", age: 12.5, sport: "Cricket" }));
     expect(fractional.errors.age).toBeDefined();
-    const tooYoung = await validationError(new Player({ name: "Ann", age: 2, sport: "Cricket" }));
+    const tooYoung = await validationError(new Player({ academy: id(), name: "Ann", age: 2, sport: "Cricket" }));
     expect(tooYoung.errors.age).toBeDefined();
   });
 
   it("accepts a valid player", async () => {
-    expect(await validationError(new Player({ name: "Ann", age: 16, sport: " Cricket " }))).toBeUndefined();
+    expect(await validationError(new Player({ academy: id(), name: "Ann", age: 16, sport: " Cricket " }))).toBeUndefined();
   });
 });
 
 describe("Session model", () => {
-  const base = { date: new Date("2026-11-02"), sport: "Cricket" };
+  const base = { academy: id(), date: new Date("2026-11-02"), sport: "Cricket" };
 
   it("defaults to OPEN with empty attendance", async () => {
     const session = new Session(base);
@@ -89,7 +89,7 @@ describe("Session model", () => {
 });
 
 describe("Match model", () => {
-  const base = { date: new Date("2026-11-02"), sport: "Cricket", opponent: "City XI" };
+  const base = { academy: id(), date: new Date("2026-11-02"), sport: "Cricket", opponent: "City XI" };
 
   it("accepts a valid match", async () => {
     expect(await validationError(new Match({ ...base, participants: [{ player: id(), score: 42 }] }))).toBeUndefined();
@@ -97,7 +97,7 @@ describe("Match model", () => {
 
   it("requires date, sport and opponent", async () => {
     const err = await validationError(new Match({}));
-    expect(Object.keys(err.errors).sort()).toEqual(["date", "opponent", "sport"]);
+    expect(Object.keys(err.errors).sort()).toEqual(["academy", "date", "opponent", "sport"]);
   });
 
   it("rejects duplicate participants and negative scores", async () => {

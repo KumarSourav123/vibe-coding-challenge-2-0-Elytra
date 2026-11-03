@@ -13,7 +13,7 @@ Update this file whenever a status changes. Last updated: 2026-11-02.
 | 5 | Landing page, role cards, reusable UI | 1 | N/A | N/A | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 6 | Authentication & roles | 2 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 7 | Player management (create with login, list, view, edit, reset password) | 3 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
-| 7a | Coach/Scout registration with access codes | 3 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 7a | Coach/Scout registration with access codes (replaced by academy join codes, see 13a) | 3 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 7b | First-login password change + change password | 3 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 8 | Practice sessions & attendance | 4 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 8a | UI redesign (app shell, design system) | 3→4 | N/A | N/A | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
@@ -22,6 +22,8 @@ Update this file whenever a status changes. Last updated: 2026-11-02.
 | 11 | Coach dashboard (readiness board + player performance) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 12 | Player dashboard (own data only) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 13 | Scout dashboard (Ready only) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 13a | Multi-academy (create / join with codes, isolation, migration) | 6+ | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 13b | Evaluation mode (demo codes and logins shown to judges behind `EVALUATION_MODE`) | 7 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 14 | Compulsory competition test cases (1–11) | 7 | N/A | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | TESTING (final check on Vercel in Phase 7) |
 | 15 | Production deployment (Vercel) | 7 | N/A | PENDING | PENDING | PENDING | PENDING | PENDING |
 
@@ -113,6 +115,23 @@ Rule: READY = attendance ≥ 75% of CLOSED sessions (exact integer comparison) A
   - Bela calling `/api/player/dashboard?playerId=<Arjun>` still gets only her own data. Her calls to `/api/players/:id/performance`, `/api/players/:id`, scout and coach endpoints → `FORBIDDEN`.
   - Pages `/coach/readiness`, `/coach/players/:id`, `/scout`, `/scout/players/:id` and `/player` → 200. Player → `/scout` redirects to `/player`.
 - Not yet done: a browser click-through of the dashboards.
+
+## Multi-academy verification log (2026-11-03)
+
+Decisions (team): anyone can create an academy (becoming its Head Coach). Coaches and scouts join with that academy's join code. Scouts are per academy. One email = one academy. Only the Head Coach manages codes and the name.
+
+- `npm run lint`: no errors. `npm run build`: succeeded.
+- `npm test`: 29 files, 273 tests passed.
+  - New suites: `academy.integration` (create, join, lookup, Head Coach powers, code rotation, **full cross-academy isolation** for players, sessions, matches, readiness and scout; pre-migration accounts blocked) and `joinCode`.
+  - Every existing suite now runs inside a test academy.
+- Live check (`next start` + MongoDB):
+  - Inserted pre-academy data. The legacy coach was blocked with `ACADEMY_REQUIRED`.
+  - `npm run migrate:academy` moved 2 users and 1 player into "Sports Academy" and made the coach its Head Coach. The second run was a no-op ("Nothing to migrate").
+  - The legacy coach and player then worked normally.
+  - Created "Beta Academy" (201, `isHeadCoach`). Code lookup → "Beta Academy / SCOUT". A scout joined.
+  - Beta's coach: 0 players, and the migrated player's id → `NOT_FOUND`.
+  - `npm run seed` creates a "Demo Academy" with codes.
+- Removed the `COACH_SIGNUP_CODE` / `SCOUT_SIGNUP_CODE` env vars (replaced by per-academy join codes).
 
 ## Surprise requirement (4 Nov, 11:00 IST)
 

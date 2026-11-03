@@ -9,9 +9,9 @@ export const runtime = "nodejs";
 /** POST /api/sessions/:id/close - see docs/API_CONTRACTS.md §2.16 */
 export async function POST(request, { params }) {
   try {
-    await requireRole(request, ROLES.COACH);
+    const coach = await requireRole(request, ROLES.COACH);
     const { id } = await params;
-    return successResponse({ session: await closeSession(id) }, "Session closed");
+    return successResponse({ session: await closeSession(id, coach.academy) }, "Session closed");
   } catch (error) {
     return handleRouteError(error);
   }

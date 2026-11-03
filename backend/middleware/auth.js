@@ -1,4 +1,5 @@
 import { getActiveUserById, UNAUTHENTICATED_ERROR } from "@/backend/services/authService";
+import { ROLES } from "@/backend/utils/constants";
 import { AppError } from "@/backend/utils/errors";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/authToken";
 
@@ -6,10 +7,11 @@ import { SESSION_COOKIE_NAME, verifySessionToken } from "@/lib/authToken";
  * Authentication guards for route handlers.
  *
  *   const user = await requireRole(request, ROLES.COACH);
+ *   await listPlayers(filters, user.academy);   // always scope by the user's academy
  *
- * Identity always comes from the signed session cookie, and the user (including
- * role and linked player) is reloaded from the database. Never trust user or
- * player IDs sent by the client for access control.
+ * Identity always comes from the signed session cookie, and the user (role,
+ * academy, linked player) is reloaded from the database. Never trust user,
+ * player or academy IDs sent by the client for access control.
  */
 
 /**
@@ -35,11 +37,19 @@ export async function getSessionUser(request) {
  * @param {{ allowPasswordChangeRequired?: boolean }} [options] Only the "me" and
  *   change-password routes may set this; everything else is blocked until a
  *   temporary password is changed.
- * @throws {AppError} 401 UNAUTHENTICATED or 403 PASSWORD_CHANGE_REQUIRED
+ * @throws {AppError} 401 UNAUTHENTICATED, 403 ACADEMY_REQUIRED or 403 PASSWORD_CHANGE_REQUIRED
  */
 export async function requireAuth(request, { allowPasswordChangeRequired = false } = {}) {
   const user = await getSessionUser(request);
   if (!user) throw new AppError("Authentication required", 401, [UNAUTHENTICATED_ERROR]);
+
+  // Every tenant query filters by user.academy, so an account without one
+  // must never reach a service (an undefined filter would match all academies).
+  if (!user.academy) {
+    throw new AppError("This account isn't linked to an academy", 403, [
+      { code: "ACADEMY_REQUIRED", message: "This account isn't linked to an academy" },
+    ]);
+  }
 
   if (user.mustChangePassword && !allowPasswordChangeRequired) {
     throw new AppError("You must change your password first", 403, [
@@ -55,6 +65,17 @@ export async function requireRole(request, ...roles) {
   if (!roles.includes(user.role)) {
     throw new AppError("You do not have permission to perform this action", 403, [
       { code: "FORBIDDEN", message: `This action requires role: ${roles.join(" or ")}` },
+    ]);
+  }
+  return user;
+}
+
+/** Only the academy's Head Coach (join codes, academy name). */
+export async function requireHeadCoach(request) {
+  const user = await requireRole(request, ROLES.COACH);
+  if (!user.isHeadCoach) {
+    throw new AppError("Only the Head Coach can do this", 403, [
+      { code: "FORBIDDEN", message: "Only the academy's Head Coach can do this" },
     ]);
   }
   return user;

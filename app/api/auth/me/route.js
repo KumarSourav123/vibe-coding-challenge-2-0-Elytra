@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export async function GET(request) {
   try {
     const user = await requireAuth(request, { allowPasswordChangeRequired: true });
-    return successResponse(toSessionPayload(user), "Authenticated");
+    return successResponse(await toSessionPayload(user), "Authenticated");
   } catch (error) {
     const response = handleRouteError(error);
     // Drop a cookie that no longer maps to a valid session.

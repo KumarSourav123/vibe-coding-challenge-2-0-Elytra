@@ -176,12 +176,26 @@ Rules:
 - **Player isolation:** `/api/player/dashboard` reads `user.player` from `requireRole(request, ROLES.PLAYER)`. Query params are ignored.
 - **Scout isolation:** only `isActive && isReady`. A non-Ready id returns the same 404 as an unknown id. Responses never include account data.
 
+## Multi-academy
+
+| File | Responsibility |
+| --- | --- |
+| `backend/models/Academy.js` | Name plus unique `coachJoinCode` / `scoutJoinCode` (hidden from `toJSON`) |
+| `backend/utils/schemaHelpers.js` | `academyField`: required, indexed ref used by User, Player, Session and Match |
+| `backend/utils/joinCode.js` | `generateJoinCode()` (`XXXX-XXXX-XXXX`, 60 bits), `normalizeJoinCode()` |
+| `backend/services/academyService.js` | `createAcademy`, `resolveJoinCode`, `lookupJoinCode`, `getAcademyOverview`, `renameAcademy`, `regenerateJoinCode` |
+| `backend/services/authService.js` | `registerAcademy` (academy + Head Coach, rolled back on failure), `registerUser` (join by code) |
+| `backend/middleware/auth.js` | `requireAuth` blocks accounts without an academy (403 `ACADEMY_REQUIRED`). `requireHeadCoach` |
+| `scripts/migrate-academy.mjs` | `npm run migrate:academy`: moves records without an academy into "Sports Academy" (idempotent) |
+
+**The one rule:** every service function takes the academy from the session user (`user.academy`) and **every query includes `academy`**. Lookups by id use `findOne({ _id, academy })`, so another academy's id behaves exactly like an unknown id. Never accept an academy id from the request.
+
 ## Testing
 
 - `npm test` runs Vitest. `tests/backend/mongodb.integration.test.js` starts a real in-memory MongoDB (`mongodb-memory-server`), so tests never touch Atlas.
 - Write a service test against the in-memory DB for every new business rule, and a route test for its status codes.
 - Use the helpers in `tests/helpers/`:
-  - `startTestDatabase` / `stopTestDatabase`, `createUser` and `loginAs` (`db.js`)
+  - `startTestDatabase` / `stopTestDatabase`, `createUser` (pass `academy`) and `loginAs` (`db.js`). Create the academy with `createAcademy()` from `academyService`
   - `makeRequest` / `sessionCookieFrom` (`requests.js`)
 - Dynamic routes take a second argument: `GET(request, { params: Promise.resolve({ id }) })`.
 

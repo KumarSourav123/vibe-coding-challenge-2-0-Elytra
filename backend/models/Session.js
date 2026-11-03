@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { normalizeSport } from "@/backend/utils/sport";
 import { ATTENDANCE_STATUS, SESSION_STATUS } from "@/backend/utils/constants";
-import { toJSONTransform, uniquePlayersValidator } from "@/backend/utils/schemaHelpers";
+import { academyField, toJSONTransform, uniquePlayersValidator } from "@/backend/utils/schemaHelpers";
 
 /**
  * Practice session (core rules #2-#5).
@@ -27,6 +27,7 @@ const attendanceSchema = new mongoose.Schema(
 
 const sessionSchema = new mongoose.Schema(
   {
+    academy: academyField,
     // Calendar day of the session, stored as UTC midnight (see API_CONTRACTS.md).
     date: { type: Date, required: [true, "Date is required"] },
     sport: {

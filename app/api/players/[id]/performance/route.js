@@ -10,9 +10,9 @@ export const runtime = "nodejs";
 /** GET /api/players/:id/performance - see docs/API_CONTRACTS.md §2.23 */
 export async function GET(request, { params }) {
   try {
-    await requireRole(request, ROLES.COACH);
+    const coach = await requireRole(request, ROLES.COACH);
     const { id } = await params;
-    return successResponse(await getPlayerPerformance(id), "Performance fetched");
+    return successResponse(await getPlayerPerformance(id, coach.academy), "Performance fetched");
   } catch (error) {
     return handleRouteError(error);
   }

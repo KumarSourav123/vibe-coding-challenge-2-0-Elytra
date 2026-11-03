@@ -31,8 +31,8 @@ export default function HomePage() {
               <Button size="lg" href="/login" iconRight="arrowRight">
                 Sign in
               </Button>
-              <Button size="lg" variant="secondary" href="#roles">
-                Explore roles
+              <Button size="lg" variant="secondary" href="/register">
+                Create your academy
               </Button>
             </div>
           </div>

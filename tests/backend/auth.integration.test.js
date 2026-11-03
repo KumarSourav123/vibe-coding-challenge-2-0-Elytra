@@ -1,5 +1,6 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createAcademy } from "@/backend/services/academyService";
 import { POST as login } from "@/app/api/auth/login/route";
 import { POST as logout } from "@/app/api/auth/logout/route";
 import { GET as me } from "@/app/api/auth/me/route";
@@ -16,6 +17,7 @@ const PASSWORD = "correct-horse-battery";
 // End-to-end auth flow against a real in-memory MongoDB.
 describe("authentication API", () => {
   let mongo;
+  let academy;
   let player;
 
   const loginAs = (email, password = PASSWORD) =>
@@ -26,14 +28,15 @@ describe("authentication API", () => {
     process.env.MONGODB_URI = mongo.getUri("sports-academy-auth-test");
     await connectToDatabase();
     await User.init();
+    academy = await createAcademy("Test Academy");
 
     const passwordHash = await hashPassword(PASSWORD);
-    player = await Player.create({ name: "Riya", age: 15, sport: "Football" });
+    player = await Player.create({ academy: academy._id, name: "Riya", age: 15, sport: "Football" });
     await User.create([
-      { name: "Coach Kim", email: "coach@academy.test", passwordHash, role: ROLES.COACH },
-      { name: "Scout Lee", email: "scout@academy.test", passwordHash, role: ROLES.SCOUT },
-      { name: "Riya", email: "riya@academy.test", passwordHash, role: ROLES.PLAYER, player: player._id },
-      { name: "Gone", email: "disabled@academy.test", passwordHash, role: ROLES.COACH, isActive: false },
+      { name: "Coach Kim", email: "coach@academy.test", passwordHash, academy: academy._id, role: ROLES.COACH },
+      { name: "Scout Lee", email: "scout@academy.test", passwordHash, academy: academy._id, role: ROLES.SCOUT },
+      { name: "Riya", email: "riya@academy.test", passwordHash, academy: academy._id, role: ROLES.PLAYER, player: player._id },
+      { name: "Gone", email: "disabled@academy.test", passwordHash, academy: academy._id, role: ROLES.COACH, isActive: false },
     ]);
   });
 
@@ -158,7 +161,7 @@ describe("authentication API", () => {
 
     it("returns 401 once the user is deactivated, even with a previously valid cookie", async () => {
       const passwordHash = await hashPassword(PASSWORD);
-      await User.create({ name: "Temp", email: "temp@academy.test", passwordHash, role: ROLES.SCOUT });
+      await User.create({ name: "Temp", email: "temp@academy.test", passwordHash, academy: academy._id, role: ROLES.SCOUT });
       const cookie = sessionCookieFrom(await loginAs("temp@academy.test"));
       expect((await me(makeRequest("/api/auth/me", { cookie }))).status).toBe(200);
 

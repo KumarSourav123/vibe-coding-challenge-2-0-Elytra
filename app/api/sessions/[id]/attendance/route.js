@@ -11,10 +11,10 @@ export const runtime = "nodejs";
 /** POST /api/sessions/:id/attendance - see docs/API_CONTRACTS.md §2.15 */
 export async function POST(request, { params }) {
   try {
-    await requireRole(request, ROLES.COACH);
+    const coach = await requireRole(request, ROLES.COACH);
     const { id } = await params;
     const records = validateAttendanceInput(await readJsonBody(request));
-    return successResponse({ session: await markAttendance(id, records) }, "Attendance saved");
+    return successResponse({ session: await markAttendance(id, records, coach.academy) }, "Attendance saved");
   } catch (error) {
     return handleRouteError(error);
   }

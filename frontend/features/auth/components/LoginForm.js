@@ -6,6 +6,7 @@ import Alert from "@/frontend/components/ui/Alert";
 import Button from "@/frontend/components/ui/Button";
 import Input from "@/frontend/components/ui/Input";
 import Spinner from "@/frontend/components/ui/Spinner";
+import EvaluationPanel from "@/frontend/features/evaluation/components/EvaluationPanel";
 import { useAuth } from "../context/AuthProvider";
 import { CHANGE_PASSWORD_PATH } from "../data/paths";
 
@@ -64,6 +65,14 @@ export default function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
+      <EvaluationPanel
+        variant="login"
+        onUseAccount={(credentials) => {
+          setValues(credentials);
+          setFieldErrors({});
+          setFormError(null);
+        }}
+      />
       {formError && <Alert tone="danger">{formError}</Alert>}
 
       <Input

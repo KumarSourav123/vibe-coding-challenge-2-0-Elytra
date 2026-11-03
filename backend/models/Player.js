@@ -1,10 +1,11 @@
 import mongoose from "mongoose";
 import { normalizeSport } from "@/backend/utils/sport";
-import { toJSONTransform } from "@/backend/utils/schemaHelpers";
+import { academyField, toJSONTransform } from "@/backend/utils/schemaHelpers";
 
 /** Player profile created by a Coach (core rule #1: name, age, sport). */
 const playerSchema = new mongoose.Schema(
   {
+    academy: academyField,
     name: {
       type: String,
       required: [true, "Name is required"],

@@ -1,26 +1,27 @@
 /**
- * Development seed: creates one Coach, one Scout and one demo Player account.
+ * Development seed: a "Demo Academy" with one Head Coach, one Scout and one
+ * demo Player account.
  *
  *   npm run seed
  *
  * Reads MONGODB_URI and SEED_PASSWORD from .env.local. Existing accounts are
  * left untouched (the script is safe to re-run). Refuses to run in production.
  */
-import { Player, User } from "@/backend/models";
-import { ROLES } from "@/backend/utils/constants";
+import { Academy, Player, User } from "@/backend/models";
+import { createAcademy } from "@/backend/services/academyService";
+import { DEMO_ACADEMY_NAME, DEMO_ACCOUNTS } from "@/backend/utils/demoAccounts";
 import { hashPassword, PASSWORD_MIN_LENGTH } from "@/backend/utils/password";
 import { connectToDatabase, disconnectFromDatabase } from "@/lib/mongodb";
 
-const ACCOUNTS = [
-  { name: "Coach Demo", email: "coach@academy.test", role: ROLES.COACH },
-  { name: "Scout Demo", email: "scout@academy.test", role: ROLES.SCOUT },
-  {
-    name: "Player Demo",
-    email: "player@academy.test",
-    role: ROLES.PLAYER,
-    player: { name: "Player Demo", age: 16, sport: "Cricket" },
-  },
-];
+const ACADEMY_NAME = DEMO_ACADEMY_NAME;
+const ACCOUNTS = DEMO_ACCOUNTS;
+
+async function findOrCreateAcademy() {
+  // Reuse the academy the demo coach already belongs to, if any.
+  const coach = await User.findOne({ email: ACCOUNTS[0].email });
+  if (coach?.academy) return Academy.findById(coach.academy);
+  return (await Academy.findOne({ name: ACADEMY_NAME })) ?? createAcademy(ACADEMY_NAME);
+}
 
 async function main() {
   if (process.env.NODE_ENV === "production") {
@@ -33,25 +34,27 @@ async function main() {
   }
 
   await connectToDatabase();
+  const academy = await findOrCreateAcademy();
   const passwordHash = await hashPassword(password);
 
-  for (const account of ACCOUNTS) {
+  for (const { player: profile, ...account } of ACCOUNTS) {
     if (await User.exists({ email: account.email })) {
       console.log(`skip    ${account.role.padEnd(6)} ${account.email} (already exists)`);
       continue;
     }
 
-    const player = account.player ? await Player.create(account.player) : null;
-    await User.create({
-      name: account.name,
-      email: account.email,
-      role: account.role,
-      passwordHash,
-      player: player?._id ?? null,
-    });
+    const player = profile ? await Player.create({ ...profile, academy: academy._id }) : null;
+    const user = await User.create({ ...account, academy: academy._id, passwordHash, player: player?._id ?? null });
+    if (account.isHeadCoach && !academy.createdBy) {
+      academy.createdBy = user._id;
+      await academy.save();
+    }
     console.log(`created ${account.role.padEnd(6)} ${account.email}`);
   }
 
+  console.log(`\nAcademy: ${academy.name}`);
+  console.log(`  Coach join code: ${academy.coachJoinCode}`);
+  console.log(`  Scout join code: ${academy.scoutJoinCode}`);
   console.log("\nLog in at /login with these emails and your SEED_PASSWORD.");
 }
 

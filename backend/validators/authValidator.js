@@ -1,8 +1,8 @@
-import { ROLES } from "@/backend/utils/constants";
 import { PASSWORD_MAX_LENGTH } from "@/backend/utils/password";
 import { checkEmail, checkNewPassword, checkString, createValidator } from "./common";
 
-const SELF_REGISTER_ROLES = [ROLES.COACH, ROLES.SCOUT];
+const PERSON_NAME = { label: "Name", min: 2, max: 100 };
+const ACADEMY_NAME = { label: "Academy name", min: 2, max: 100 };
 
 /**
  * Validate the POST /api/auth/login body.
@@ -25,23 +25,34 @@ export function validateLoginInput(body) {
 }
 
 /**
- * Validate the POST /api/auth/register body. PLAYER is rejected: players are
- * created by a Coach.
+ * POST /api/auth/register - join an academy (docs/API_CONTRACTS.md §2.5).
+ * The join code decides the role, so no role is accepted from the client.
  */
 export function validateRegisterInput(body) {
   const v = createValidator();
-  const name = checkString(v, "name", body.name, { label: "Name", min: 2, max: 100 });
-  const email = checkEmail(v, "email", body.email);
-  const password = checkNewPassword(v, "password", body.password);
-
-  const role = SELF_REGISTER_ROLES.includes(body.role) ? body.role : undefined;
-  if (!role) v.add("role", "Role must be COACH or SCOUT");
-
-  const accessCode = typeof body.accessCode === "string" ? body.accessCode.trim() : "";
-  if (!accessCode) v.add("accessCode", "Access code is required");
-
+  const joinCode = typeof body.joinCode === "string" ? body.joinCode.trim() : "";
+  if (!joinCode) v.add("joinCode", "Join code is required");
+  const input = {
+    joinCode,
+    name: checkString(v, "name", body.name, PERSON_NAME),
+    email: checkEmail(v, "email", body.email),
+    password: checkNewPassword(v, "password", body.password),
+  };
   v.throwIfErrors();
-  return { name, email, password, role, accessCode };
+  return input;
+}
+
+/** POST /api/auth/register-academy - create an academy and its Head Coach (§2.5a). */
+export function validateRegisterAcademyInput(body) {
+  const v = createValidator();
+  const input = {
+    academyName: checkString(v, "academyName", body.academyName, ACADEMY_NAME),
+    name: checkString(v, "name", body.name, PERSON_NAME),
+    email: checkEmail(v, "email", body.email),
+    password: checkNewPassword(v, "password", body.password),
+  };
+  v.throwIfErrors();
+  return input;
 }
 
 /** Validate the POST /api/auth/change-password body. */

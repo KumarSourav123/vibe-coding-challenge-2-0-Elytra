@@ -12,8 +12,8 @@ export const runtime = "nodejs";
 /** GET /api/matches - see docs/API_CONTRACTS.md §2.19 */
 export async function GET(request) {
   try {
-    await requireRole(request, ROLES.COACH);
-    const matches = await listMatches(validateMatchQuery(request.nextUrl.searchParams));
+    const coach = await requireRole(request, ROLES.COACH);
+    const matches = await listMatches(validateMatchQuery(request.nextUrl.searchParams), coach.academy);
     return successResponse({ matches, count: matches.length }, "Matches fetched");
   } catch (error) {
     return handleRouteError(error);

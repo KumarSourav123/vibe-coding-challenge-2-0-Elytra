@@ -41,11 +41,11 @@ export function computePerformance({ matchesPlayed = 0, totalScore = 0, bestScor
 
 /**
  * Attendance and match stats per player, from two aggregations.
- * @param {mongoose.Types.ObjectId[] | null} playerIds limit to these players (null = all)
+ * @param {mongoose.Types.ObjectId[]} playerIds limit to these (academy-scoped) players
  * @returns {Promise<Map<string, { completedSessions, sessionsAttended, matchesPlayed, totalScore, bestScore }>>}
  */
-async function aggregateStats(playerIds = null) {
-  const onlyPlayers = (path) => (playerIds ? [{ $match: { [path]: { $in: playerIds } } }] : []);
+async function aggregateStats(playerIds) {
+  const onlyPlayers = (path) => [{ $match: { [path]: { $in: playerIds } } }];
 
   const [attendance, matches] = await Promise.all([
     Session.aggregate([
@@ -110,8 +110,8 @@ async function readinessRows(query) {
 }
 
 /** Coach dashboard (§2.22). `summary` covers the whole academy, before filters. */
-export async function getCoachDashboard({ sport, readiness }) {
-  const all = await readinessRows({});
+export async function getCoachDashboard({ sport, readiness }, academyId) {
+  const all = await readinessRows({ academy: academyId });
   const players = all.filter(
     (row) =>
       (!sport || row.player.sport === sport) &&
@@ -121,9 +121,9 @@ export async function getCoachDashboard({ sport, readiness }) {
   return { summary: { players: all.length, ready, notReady: all.length - ready }, players };
 }
 
-/** Scout list (§2.25): active AND Ready players only. */
-export async function listReadyPlayers({ sport }) {
-  const rows = await readinessRows({ isActive: true, ...(sport && { sport }) });
+/** Scout list (§2.25): the academy's active AND Ready players only. */
+export async function listReadyPlayers({ sport }, academyId) {
+  const rows = await readinessRows({ academy: academyId, isActive: true, ...(sport && { sport }) });
   return rows.filter((row) => row.readiness.isReady);
 }
 
@@ -131,8 +131,8 @@ export async function listReadyPlayers({ sport }) {
 async function buildPerformanceDetail(player) {
   const [stats, sessions, matches] = await Promise.all([
     aggregateStats([player._id]),
-    Session.find({ status: SESSION_STATUS.CLOSED, "attendance.player": player._id }).sort({ date: -1, closedAt: -1 }),
-    Match.find({ "participants.player": player._id }).sort({ date: -1, createdAt: -1 }),
+    Session.find({ academy: player.academy, status: SESSION_STATUS.CLOSED, "attendance.player": player._id }).sort({ date: -1, closedAt: -1 }),
+    Match.find({ academy: player.academy, "participants.player": player._id }).sort({ date: -1, createdAt: -1 }),
   ]);
 
   const id = String(player._id);
@@ -161,17 +161,17 @@ function toDetailResponse({ profile, readiness, performance, attendance, matches
 
 const notFound = () => new AppError("Player not found", 404, [{ code: "NOT_FOUND", message: "Player not found" }]);
 
-async function findPlayer(id) {
+async function findPlayer(id, academyId) {
   if (!mongoose.isValidObjectId(id)) {
     throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid player id" }]);
   }
   await connectToDatabase();
-  return Player.findById(id);
+  return Player.findOne({ _id: id, academy: academyId });
 }
 
-/** Coach view of any player (§2.23). */
-export async function getPlayerPerformance(id) {
-  const player = await findPlayer(id);
+/** Coach view of any player in the academy (§2.23). */
+export async function getPlayerPerformance(id, academyId) {
+  const player = await findPlayer(id, academyId);
   if (!player) throw notFound();
   return toDetailResponse(await buildPerformanceDetail(player));
 }
@@ -179,7 +179,7 @@ export async function getPlayerPerformance(id) {
 /** Signed-in player's own dashboard (§2.24). Identity comes only from the session user. */
 export async function getOwnDashboard(user) {
   await connectToDatabase();
-  const player = user.player ? await Player.findById(user.player) : null;
+  const player = user.player ? await Player.findOne({ _id: user.player, academy: user.academy }) : null;
   if (!player) {
     throw new AppError("No player profile is linked to this account", 404, [
       { code: "NO_PLAYER_PROFILE", message: "No player profile is linked to this account" },
@@ -192,8 +192,8 @@ export async function getOwnDashboard(user) {
  * Scout view of one player (§2.26). Not active or not Ready is reported
  * exactly like an unknown id, so scouts can't learn they exist.
  */
-export async function getReadyPlayerForScout(id) {
-  const player = await findPlayer(id);
+export async function getReadyPlayerForScout(id, academyId) {
+  const player = await findPlayer(id, academyId);
   if (!player || !player.isActive) throw notFound();
   const detail = await buildPerformanceDetail(player);
   if (!detail.readiness.isReady) throw notFound();

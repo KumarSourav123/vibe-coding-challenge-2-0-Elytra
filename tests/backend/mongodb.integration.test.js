@@ -1,5 +1,6 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createAcademy } from "@/backend/services/academyService";
 import { GET } from "@/app/api/health/route";
 import { Match, Player, Session, User } from "@/backend/models";
 import { ATTENDANCE_STATUS, ROLES } from "@/backend/utils/constants";
@@ -10,12 +11,14 @@ import { FAKE_PASSWORD_HASH } from "../helpers/fixtures";
 // Runs against a real (in-memory) MongoDB instance to verify actual database operations.
 describe("MongoDB integration", () => {
   let mongo;
+  let academy;
 
   beforeAll(async () => {
     mongo = await MongoMemoryServer.create();
     process.env.MONGODB_URI = mongo.getUri("sports-academy-test");
     await connectToDatabase();
     await Promise.all([User.init(), Player.init(), Session.init(), Match.init()]);
+    academy = await createAcademy("Test Academy");
   });
 
   afterAll(async () => {
@@ -43,20 +46,21 @@ describe("MongoDB integration", () => {
   });
 
   it("persists and reads back all four models", async () => {
-    const player = await Player.create({ name: "Asha", age: 17, sport: "Cricket" });
+    const player = await Player.create({ academy: academy._id, name: "Asha", age: 17, sport: "Cricket" });
     await User.create({
+      academy: academy._id,
       name: "Asha",
       email: "asha@example.com",
       passwordHash: FAKE_PASSWORD_HASH,
       role: ROLES.PLAYER,
       player: player._id,
     });
-    const session = await Session.create({
+    const session = await Session.create({ academy: academy._id,
       date: new Date("2026-11-02T00:00:00.000Z"),
       sport: "Cricket",
       attendance: [{ player: player._id, status: ATTENDANCE_STATUS.PRESENT }],
     });
-    await Match.create({
+    await Match.create({ academy: academy._id,
       date: new Date("2026-11-02T00:00:00.000Z"),
       sport: "Cricket",
       opponent: "City XI",
@@ -75,7 +79,7 @@ describe("MongoDB integration", () => {
   });
 
   it("enforces unique email and maps it to a 409 response", async () => {
-    const data = { name: "Dup", email: "dup@example.com", passwordHash: FAKE_PASSWORD_HASH, role: ROLES.SCOUT };
+    const data = { academy: academy._id, name: "Dup", email: "dup@example.com", passwordHash: FAKE_PASSWORD_HASH, role: ROLES.SCOUT };
     await User.create(data);
     const error = await User.create(data).catch((err) => err);
     expect(error.code).toBe(11000);

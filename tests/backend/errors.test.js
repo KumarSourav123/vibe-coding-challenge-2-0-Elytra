@@ -22,7 +22,7 @@ describe("handleRouteError", () => {
     const body = await res.json();
     expect(res.status).toBe(400);
     expect(body.message).toBe("Validation failed");
-    expect(body.errors.map((e) => e.field).sort()).toEqual(["age", "name", "sport"]);
+    expect(body.errors.map((e) => e.field).sort()).toEqual(["academy", "age", "name", "sport"]);
   });
 
   it("maps CastError to 400 INVALID_ID", async () => {

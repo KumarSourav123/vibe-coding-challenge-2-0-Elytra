@@ -105,7 +105,7 @@ Use `useAuth()` for display only (names, menus). Access control is enforced by t
 | `/coach/players` | `PlayerList` | Search (name or email, debounced), sport and status filters, table with status badges, empty and loading states |
 | `/coach/players/new` | `CreatePlayer` → `PlayerForm mode="create"` | Profile, login email and temporary password (with a generator). On success, `CredentialsCard` shows the login details once, with a copy button |
 | `/coach/players/:id` | `PlayerDetails` | Profile and login summary, inline edit (`PlayerForm mode="edit"` sends only changed fields), `ResetPasswordPanel` |
-| `/register` | `RegisterForm` | Coach/Scout sign-up with an access code |
+| `/register` | `RegisterForm` | Create or join an academy (see "Academy feature" below) |
 | `/account/password` | `ChangePasswordForm` | Required first-login change, also linked from the header menu |
 
 Mocks: `features/players/mocks/playersMock.js`. The sport field suggests `COMMON_SPORTS`, but any name is accepted (the server normalizes it).
@@ -157,6 +157,17 @@ Mocks: `features/players/mocks/playersMock.js`. The sport field suggests `COMMON
 - `PerformanceDetail` (shared): stat cards, `ReadinessCard` (verdict, reasons and meters), match history and attendance history.
 - `ReadinessMeter`: a bar with a threshold marker, and a `compact` variant for tables.
 - `utils/readinessText.js`: `readinessGaps` (uses the same exact rule as the server), `readinessSummary`, `formatScore`.
+
+## Academy feature (multi-academy)
+
+| Route | Component | What it does |
+| --- | --- | --- |
+| `/register` | `RegisterForm` | Tabs: **Create an academy** (academy name + Head Coach) and **Join an academy** (join code with a live "You're joining X as a Coach/Scout" preview) |
+| `/coach/academy` | `AcademySettings` | Members list for every coach. Head Coach only: rename, and copy or regenerate the coach and scout join codes (with confirmation) |
+| Sidebar | `AppShell` | Academy name card under the logo. "Head Coach" under the user's name |
+
+- The session user now includes `academy: { id, name }` and `isHeadCoach`.
+- `SegmentedControl` has a `fullWidth` option.
 
 ## Health feature (reference implementation)
 

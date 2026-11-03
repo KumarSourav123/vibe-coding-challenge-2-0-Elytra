@@ -6,8 +6,9 @@ import { AppError } from "@/backend/utils/errors";
 import { connectToDatabase } from "@/lib/mongodb";
 
 /**
- * Matches and scores (docs/API_CONTRACTS.md §2.17-2.21). Callers must already
- * have checked the COACH role.
+ * Matches and scores (docs/API_CONTRACTS.md §2.17-2.21). Scoped to one
+ * academy: other academies' matches and players look "not found".
+ * Callers must already have checked the COACH role.
  *
  * Eligibility (core rule #7, Q3): active, same sport, and PRESENT in at least
  * one CLOSED session on the same date and sport. Open sessions never count.
@@ -24,8 +25,8 @@ const conflict = () =>
  * Attendance on a date+sport across sessions. A player counts as present if
  * any CLOSED session has them PRESENT; `absent` holds closed-session absences.
  */
-async function getAttendanceForDay(date, sport) {
-  const sessions = await Session.find({ date, sport }).select("status attendance");
+async function getAttendanceForDay(date, sport, academyId) {
+  const sessions = await Session.find({ academy: academyId, date, sport }).select("status attendance");
   const closed = sessions.filter((s) => s.status === SESSION_STATUS.CLOSED);
 
   const present = new Set();
@@ -41,11 +42,11 @@ async function getAttendanceForDay(date, sport) {
 }
 
 /** Players who may be selected for a match on this date and sport (§2.17). */
-export async function getEligiblePlayers({ date, sport }) {
+export async function getEligiblePlayers({ date, sport }, academyId) {
   await connectToDatabase();
-  const day = await getAttendanceForDay(date, sport);
+  const day = await getAttendanceForDay(date, sport, academyId);
   const players = day.present.size
-    ? await Player.find({ _id: { $in: [...day.present] }, isActive: true, sport }).sort({ name: 1, _id: 1 })
+    ? await Player.find({ _id: { $in: [...day.present] }, academy: academyId, isActive: true, sport }).sort({ name: 1, _id: 1 })
     : [];
 
   return {
@@ -60,9 +61,10 @@ export async function getEligiblePlayers({ date, sport }) {
  * All-or-nothing eligibility check. Returns the Player docs by id, or throws
  * 400 NOT_ELIGIBLE with one entry per offending participant.
  */
-async function assertParticipantsEligible(participants, { date, sport }) {
-  const day = await getAttendanceForDay(date, sport);
-  const players = await Player.find({ _id: { $in: participants.map((p) => p.playerId) } });
+async function assertParticipantsEligible(participants, { date, sport, academy }) {
+  const day = await getAttendanceForDay(date, sport, academy);
+  // Players of other academies are not found, exactly like unknown ids.
+  const players = await Player.find({ _id: { $in: participants.map((p) => p.playerId) }, academy });
   const playersById = new Map(players.map((p) => [String(p._id), p]));
   const dateLabel = formatDateOnly(date);
 
@@ -116,16 +118,17 @@ function toMatchDTO(match, playersById, { withParticipants = true } = {}) {
 
 async function loadPlayersFor(matches) {
   const ids = [...new Set(matches.flatMap((m) => m.participants.map((p) => String(p.player))))];
-  const players = ids.length ? await Player.find({ _id: { $in: ids } }) : [];
+  const academies = [...new Set(matches.map((m) => String(m.academy)))];
+  const players = ids.length ? await Player.find({ _id: { $in: ids }, academy: { $in: academies } }) : [];
   return new Map(players.map((p) => [String(p._id), p]));
 }
 
-async function findMatchOrThrow(id) {
+async function findMatchOrThrow(id, academyId) {
   if (!mongoose.isValidObjectId(id)) {
     throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid match id" }]);
   }
   await connectToDatabase();
-  const match = await Match.findById(id);
+  const match = await Match.findOne({ _id: id, academy: academyId });
   if (!match) throw notFound();
   return match;
 }
@@ -135,8 +138,9 @@ const toParticipantDocs = (participants) =>
 
 export async function createMatch({ date, sport, opponent, participants }, coach) {
   await connectToDatabase();
-  const playersById = await assertParticipantsEligible(participants, { date, sport });
+  const playersById = await assertParticipantsEligible(participants, { date, sport, academy: coach.academy });
   const match = await Match.create({
+    academy: coach.academy,
     date,
     sport,
     opponent,
@@ -147,15 +151,15 @@ export async function createMatch({ date, sport, opponent, participants }, coach
 }
 
 /** @param {{ sport: string|null }} filters */
-export async function listMatches({ sport }) {
+export async function listMatches({ sport }, academyId) {
   await connectToDatabase();
-  const matches = await Match.find(sport ? { sport } : {}).sort({ date: -1, createdAt: -1 });
+  const matches = await Match.find({ academy: academyId, ...(sport && { sport }) }).sort({ date: -1, createdAt: -1 });
   const playersById = await loadPlayersFor(matches);
   return matches.map((m) => toMatchDTO(m, playersById, { withParticipants: false }));
 }
 
-export async function getMatch(id) {
-  const match = await findMatchOrThrow(id);
+export async function getMatch(id, academyId) {
+  const match = await findMatchOrThrow(id, academyId);
   return toMatchDTO(match, await loadPlayersFor([match]));
 }
 
@@ -163,13 +167,13 @@ export async function getMatch(id) {
  * Update opponent and/or replace participants. Eligibility is re-checked
  * against the match's (fixed) date and sport. Compare-and-set on __v.
  */
-export async function updateMatch(id, updates) {
-  const match = await findMatchOrThrow(id);
+export async function updateMatch(id, updates, academyId) {
+  const match = await findMatchOrThrow(id, academyId);
 
   const $set = {};
   if (updates.opponent !== undefined) $set.opponent = updates.opponent;
   if (updates.participants !== undefined) {
-    await assertParticipantsEligible(updates.participants, { date: match.date, sport: match.sport });
+    await assertParticipantsEligible(updates.participants, { date: match.date, sport: match.sport, academy: match.academy });
     $set.participants = toParticipantDocs(updates.participants);
   }
 

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { normalizeSport } from "@/backend/utils/sport";
-import { toJSONTransform, uniquePlayersValidator } from "@/backend/utils/schemaHelpers";
+import { academyField, toJSONTransform, uniquePlayersValidator } from "@/backend/utils/schemaHelpers";
 
 /**
  * Match with per-player scores (core rules #6-#8).
@@ -25,6 +25,7 @@ const participantSchema = new mongoose.Schema(
 
 const matchSchema = new mongoose.Schema(
   {
+    academy: academyField,
     // Calendar day of the match, stored as UTC midnight (see API_CONTRACTS.md).
     date: { type: Date, required: [true, "Date is required"] },
     sport: {

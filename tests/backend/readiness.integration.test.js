@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createAcademy } from "@/backend/services/academyService";
 import { GET as coachDashboardRoute } from "@/app/api/coach/dashboard/route";
 import { GET as playerDashboardRoute } from "@/app/api/player/dashboard/route";
 import { GET as performanceRoute } from "@/app/api/players/[id]/performance/route";
@@ -27,6 +28,7 @@ const id = (doc) => String(doc._id);
  */
 describe("readiness API (real records)", () => {
   let mongo;
+  let academy;
   const p = {};
   const cookie = {};
 
@@ -35,6 +37,7 @@ describe("readiness API (real records)", () => {
 
   beforeAll(async () => {
     mongo = await startTestDatabase("sports-academy-readiness-test");
+    academy = await createAcademy("Test Academy");
 
     for (const [key, name, extra] of [
       ["rhea", "Rhea Ready", {}],
@@ -43,12 +46,12 @@ describe("readiness API (real records)", () => {
       ["ina", "Ina Inactive", { isActive: false }],
       ["nova", "Nova New", {}],
     ]) {
-      p[key] = await Player.create({ name, age: 17, sport: "Cricket", ...extra });
+      p[key] = await Player.create({ academy: academy._id, name, age: 17, sport: "Cricket", ...extra });
     }
 
     const day = (n) => parseDateOnly(`2026-11-0${n}`);
     const closed = (n, marks) =>
-      Session.create({
+      Session.create({ academy: academy._id,
         date: day(n),
         sport: "Cricket",
         status: "CLOSED",
@@ -59,10 +62,10 @@ describe("readiness API (real records)", () => {
     await closed(2, [[p.rhea, "PRESENT"], [p.leo, "PRESENT"], [p.omar, "PRESENT"], [p.ina, "PRESENT"]]);
     await closed(3, [[p.rhea, "PRESENT"], [p.leo, "ABSENT"], [p.omar, "PRESENT"], [p.ina, "PRESENT"]]);
     await closed(4, [[p.rhea, "ABSENT"], [p.omar, "ABSENT"], [p.ina, "ABSENT"]]);
-    await Session.create({ date: day(5), sport: "Cricket", status: "OPEN", attendance: [{ player: p.rhea._id, status: "ABSENT" }] });
+    await Session.create({ academy: academy._id, date: day(5), sport: "Cricket", status: "OPEN", attendance: [{ player: p.rhea._id, status: "ABSENT" }] });
 
     const match = (n, opponent, scores) =>
-      Match.create({
+      Match.create({ academy: academy._id,
         date: day(n),
         sport: "Cricket",
         opponent,
@@ -80,7 +83,7 @@ describe("readiness API (real records)", () => {
     ];
     for (const [key, fields] of accounts) {
       const email = `${key}@academy.test`;
-      await createUser({ name: key, email, password: PASSWORD, ...fields });
+      await createUser({ academy: academy._id, name: key, email, password: PASSWORD, ...fields });
       cookie[key] = (await loginAs(email, PASSWORD)).cookie;
     }
   });
@@ -228,7 +231,7 @@ describe("readiness API (real records)", () => {
   });
 
   it("recalculates live: one more match makes Omar Ready", async () => {
-    await Match.create({
+    await Match.create({ academy: academy._id,
       date: parseDateOnly("2026-11-02"),
       sport: "Cricket",
       opponent: "Late XI",

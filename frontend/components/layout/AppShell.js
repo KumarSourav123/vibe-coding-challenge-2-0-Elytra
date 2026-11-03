@@ -69,6 +69,15 @@ function SidebarContent({ onNavigate }) {
         <Logo href={homePath && !restricted ? homePath : "/"} />
       </div>
 
+      {user?.academy && (
+        <div className="mx-3 mb-1 rounded-lg border border-slate-200/70 bg-slate-50/70 px-3 py-2.5">
+          <p className="text-[11px] font-medium tracking-wide text-slate-400 uppercase">Academy</p>
+          <p className="truncate text-sm font-semibold text-slate-900" title={user.academy.name}>
+            {user.academy.name}
+          </p>
+        </div>
+      )}
+
       <nav aria-label="Main" className="flex-1 space-y-6 overflow-y-auto px-3 py-4">
         {status === "loading" ? (
           <div className="space-y-2 px-1" aria-hidden="true">
@@ -105,7 +114,9 @@ function SidebarContent({ onNavigate }) {
             <Avatar name={user.name} size="sm" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-slate-900">{user.name}</p>
-              <p className="truncate text-xs text-slate-500">{ROLE_LABELS[user.role] ?? user.role}</p>
+              <p className="truncate text-xs text-slate-500">
+                {user.isHeadCoach ? "Head Coach" : (ROLE_LABELS[user.role] ?? user.role)}
+              </p>
             </div>
             <button
               type="button"

@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
 import mongoose from "mongoose";
-import { User } from "@/backend/models";
-import { verifyAccessCode } from "@/backend/utils/accessCode";
+import { Academy, User } from "@/backend/models";
+import { createAcademy, resolveJoinCode } from "@/backend/services/academyService";
+import { ROLES } from "@/backend/utils/constants";
 import { AppError } from "@/backend/utils/errors";
 import { hashPassword, verifyPassword } from "@/backend/utils/password";
 import { signSessionToken } from "@/lib/authToken";
@@ -43,16 +44,44 @@ export async function authenticate({ email, password }) {
 }
 
 /**
- * Register a Coach or Scout (access-code gated; docs/API_CONTRACTS.md §2.5).
- * The access code is checked before email uniqueness, so without a valid
- * code the endpoint reveals nothing about which emails exist.
+ * Join an academy as Coach or Scout (docs/API_CONTRACTS.md §2.5). The join
+ * code decides both the academy and the role. It is checked before email
+ * uniqueness, so without a valid code nothing is revealed about which emails exist.
  */
-export async function registerUser({ name, email, password, role, accessCode }) {
-  verifyAccessCode(role, accessCode);
-  await connectToDatabase();
-
+export async function registerUser({ joinCode, name, email, password }) {
+  const { academy, role } = await resolveJoinCode(joinCode);
   if (await User.exists({ email })) throw duplicateEmail();
-  return User.create({ name, email, role, passwordHash: await hashPassword(password) });
+  return User.create({ academy: academy._id, name, email, role, passwordHash: await hashPassword(password) });
+}
+
+/**
+ * Create a new academy and its Head Coach (§2.5a). Anyone may do this: the
+ * new academy starts empty and can't see any other academy's data.
+ */
+export async function registerAcademy({ academyName, name, email, password }) {
+  await connectToDatabase();
+  if (await User.exists({ email })) throw duplicateEmail();
+
+  const passwordHash = await hashPassword(password);
+  const academy = await createAcademy(academyName);
+  try {
+    const user = await User.create({
+      academy: academy._id,
+      isHeadCoach: true,
+      name,
+      email,
+      role: ROLES.COACH,
+      passwordHash,
+    });
+    academy.createdBy = user._id;
+    await academy.save();
+    return user;
+  } catch (error) {
+    // No orphan academy if the account can't be created (e.g. an email race).
+    await Academy.deleteOne({ _id: academy._id });
+    if (error?.code === 11000 && error.keyValue?.email) throw duplicateEmail();
+    throw error;
+  }
 }
 
 /**
@@ -110,8 +139,8 @@ export async function getActiveUserById(id) {
   return user?.isActive ? user : null;
 }
 
-/** Public shape of the session user (docs/API_CONTRACTS.md §1.5). */
-export function toSessionUser(user) {
+/** Public shape of the session user (docs/API_CONTRACTS.md §1.5, §1.6). */
+export function toSessionUser(user, academy) {
   return {
     id: String(user._id),
     name: user.name,
@@ -119,10 +148,13 @@ export function toSessionUser(user) {
     role: user.role,
     playerId: user.player ? String(user.player) : null,
     mustChangePassword: Boolean(user.mustChangePassword),
+    isHeadCoach: Boolean(user.isHeadCoach),
+    academy: academy ? { id: String(academy._id), name: academy.name } : null,
   };
 }
 
-/** `data` payload shared by login and me. */
-export function toSessionPayload(user) {
-  return { user: toSessionUser(user), homePath: getHomePathForRole(user.role) };
+/** `data` payload shared by login, register, change-password and me. */
+export async function toSessionPayload(user) {
+  const academy = user.academy ? await Academy.findById(user.academy).select("name") : null;
+  return { user: toSessionUser(user, academy), homePath: getHomePathForRole(user.role) };
 }

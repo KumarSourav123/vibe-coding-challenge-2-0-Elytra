@@ -9,7 +9,7 @@ export default function LoginPage() {
     <AuthCard
       title="Welcome back"
       description="Sign in to your academy account. You'll land in your own area."
-      footer={<AuthFooterLink prompt="Coach or scout without an account?" href="/register" label="Create one" />}
+      footer={<AuthFooterLink prompt="New here?" href="/register" label="Create or join an academy" />}
     >
       {/* useSearchParams (for ?next=) needs a Suspense boundary. */}
       <Suspense>

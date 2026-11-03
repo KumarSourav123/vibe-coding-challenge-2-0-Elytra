@@ -16,7 +16,7 @@ export async function POST(request) {
     const user = await changePassword(sessionUser._id, input);
 
     // All earlier sessions are now invalid; give this browser a fresh one.
-    const response = successResponse(toSessionPayload(user), "Password changed");
+    const response = successResponse(await toSessionPayload(user), "Password changed");
     response.cookies.set(SESSION_COOKIE_NAME, await createSessionToken(user), getSessionCookieOptions());
     return response;
   } catch (error) {

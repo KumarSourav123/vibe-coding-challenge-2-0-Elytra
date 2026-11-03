@@ -2,11 +2,17 @@ import { cn } from "@/frontend/utils/cn";
 
 /**
  * Compact tab-style selector (e.g. All / Open / Closed).
- * @param {{ options: Array<{ value: string, label: string }>, value: string, onChange: (value: string) => void, label: string }} props
+ * `fullWidth` stretches it with equal-width segments.
+ * @param {{ options: Array<{ value: string, label: string }>, value: string, onChange: (value: string) => void, label: string, fullWidth?: boolean }} props
  */
-export default function SegmentedControl({ options, value, onChange, label, className }) {
+export default function SegmentedControl({ options, value, onChange, label, fullWidth = false, className }) {
   return (
-    <div role="group" aria-label={label} className={cn("inline-flex rounded-lg bg-slate-100 p-1", className)}>
+    <div
+      role="group"
+      aria-label={label}
+      className={cn("rounded-lg bg-slate-100 p-1", fullWidth ? "grid w-full" : "inline-flex", className)}
+      style={fullWidth ? { gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` } : undefined}
+    >
       {options.map((option) => {
         const active = option.value === value;
         return (

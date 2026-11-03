@@ -12,8 +12,8 @@ export const runtime = "nodejs";
 /** GET /api/sessions - see docs/API_CONTRACTS.md §2.13 */
 export async function GET(request) {
   try {
-    await requireRole(request, ROLES.COACH);
-    const sessions = await listSessions(validateSessionQuery(request.nextUrl.searchParams));
+    const coach = await requireRole(request, ROLES.COACH);
+    const sessions = await listSessions(validateSessionQuery(request.nextUrl.searchParams), coach.academy);
     return successResponse({ sessions, count: sessions.length }, "Sessions fetched");
   } catch (error) {
     return handleRouteError(error);

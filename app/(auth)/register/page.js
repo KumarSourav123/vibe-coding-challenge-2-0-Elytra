@@ -6,8 +6,8 @@ export const metadata = { title: "Create account" };
 export default function RegisterPage() {
   return (
     <AuthCard
-      title="Create your account"
-      description="For coaches and scouts, with the access code from your academy. Players get their login from their coach."
+      title="Get started"
+      description="Create a new academy, or join one with a code from its Head Coach. Players get their login from their coach."
       footer={<AuthFooterLink prompt="Already have an account?" href="/login" label="Sign in" />}
     >
       <RegisterForm />

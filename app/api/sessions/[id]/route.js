@@ -10,9 +10,9 @@ export const runtime = "nodejs";
 /** GET /api/sessions/:id - see docs/API_CONTRACTS.md §2.14 */
 export async function GET(request, { params }) {
   try {
-    await requireRole(request, ROLES.COACH);
+    const coach = await requireRole(request, ROLES.COACH);
     const { id } = await params;
-    return successResponse({ session: await getSession(id) }, "Session fetched");
+    return successResponse({ session: await getSession(id, coach.academy) }, "Session fetched");
   } catch (error) {
     return handleRouteError(error);
   }

@@ -14,7 +14,7 @@ export async function POST(request) {
     const user = await authenticate(credentials);
     const token = await createSessionToken(user);
 
-    const response = successResponse(toSessionPayload(user), "Login successful");
+    const response = successResponse(await toSessionPayload(user), "Login successful");
     response.cookies.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions());
     return response;
   } catch (error) {

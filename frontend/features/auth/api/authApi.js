@@ -11,6 +11,8 @@ export const AUTH_ENDPOINTS = {
   logout: "/api/auth/logout",
   me: "/api/auth/me",
   register: "/api/auth/register",
+  registerAcademy: "/api/auth/register-academy",
+  lookupJoinCode: "/api/academies/lookup",
   changePassword: "/api/auth/change-password",
 };
 
@@ -20,11 +22,24 @@ function toSessionResult(result) {
 }
 
 /**
- * Coach/Scout self-registration (§2.5). Logs the new user in on success.
- * @param {{ name: string, email: string, password: string, role: "COACH"|"SCOUT", accessCode: string }} input
+ * Join an academy as Coach or Scout (§2.5). The join code decides the role.
+ * @param {{ joinCode: string, name: string, email: string, password: string }} input
  */
 export async function register(input) {
   return toSessionResult(await apiRequest(AUTH_ENDPOINTS.register, { method: "POST", body: input }));
+}
+
+/**
+ * Create a new academy and become its Head Coach (§2.5a).
+ * @param {{ academyName: string, name: string, email: string, password: string }} input
+ */
+export async function registerAcademy(input) {
+  return toSessionResult(await apiRequest(AUTH_ENDPOINTS.registerAcademy, { method: "POST", body: input }));
+}
+
+/** Preview a join code (§2.5b) -> { ok, data: { academy: { name }, role } }. */
+export function lookupJoinCode(code) {
+  return apiRequest(AUTH_ENDPOINTS.lookupJoinCode, { query: { code } });
 }
 
 /** Change your own password (§2.6). Other sessions are signed out by the server. */

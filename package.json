@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "node --env-file=.env.local --import ./scripts/register-alias.mjs scripts/seed.mjs"
+    "seed": "node --env-file=.env.local --import ./scripts/register-alias.mjs scripts/seed.mjs",
+    "migrate:academy": "node --env-file=.env.local --import ./scripts/register-alias.mjs scripts/migrate-academy.mjs"
   },
   "engines": {
     "node": ">=20.9.0"

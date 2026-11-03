@@ -7,9 +7,10 @@ import { hashPassword } from "@/backend/utils/password";
 import { connectToDatabase } from "@/lib/mongodb";
 
 /**
- * Player management (docs/API_CONTRACTS.md §2.7-2.11). One shared academy:
- * every Coach can see and manage every player. Callers must already have
- * checked the COACH role.
+ * Player management (docs/API_CONTRACTS.md §2.7-2.11). Every function is
+ * scoped to one academy (the signed-in coach's `academy`): within it every
+ * coach manages every player; other academies' players look "not found".
+ * Callers must already have checked the COACH role.
  */
 
 const notFound = () =>
@@ -36,12 +37,12 @@ export function toPlayerDTO(player, user) {
   };
 }
 
-async function findPlayerOrThrow(id) {
+async function findPlayerOrThrow(id, academyId) {
   if (!mongoose.isValidObjectId(id)) {
     throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid player id" }]);
   }
   await connectToDatabase();
-  const player = await Player.findById(id);
+  const player = await Player.findOne({ _id: id, academy: academyId });
   if (!player) throw notFound();
   return player;
 }
@@ -55,10 +56,11 @@ export async function createPlayer({ name, age, sport, email, temporaryPassword 
   if (await User.exists({ email })) throw duplicateEmail();
 
   const passwordHash = await hashPassword(temporaryPassword);
-  const player = await Player.create({ name, age, sport, createdBy: coach._id });
+  const player = await Player.create({ academy: coach.academy, name, age, sport, createdBy: coach._id });
 
   try {
     const user = await User.create({
+      academy: coach.academy,
       name,
       email,
       passwordHash,
@@ -77,16 +79,16 @@ export async function createPlayer({ name, age, sport, email, temporaryPassword 
 const escapeRegex = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 /** @param {{ sport: string|null, status: "active"|"inactive"|"all", search: string }} filters */
-export async function listPlayers({ sport, status, search }) {
+export async function listPlayers({ sport, status, search }, academyId) {
   await connectToDatabase();
 
-  const query = {};
+  const query = { academy: academyId };
   if (sport) query.sport = sport;
   if (status !== "all") query.isActive = status === "active";
 
   if (search) {
     const pattern = new RegExp(escapeRegex(search), "i");
-    const matchingUsers = await User.find({ role: ROLES.PLAYER, email: pattern }).select("player");
+    const matchingUsers = await User.find({ academy: academyId, role: ROLES.PLAYER, email: pattern }).select("player");
     query.$or = [{ name: pattern }, { _id: { $in: matchingUsers.map((u) => u.player).filter(Boolean) } }];
   }
 
@@ -97,8 +99,8 @@ export async function listPlayers({ sport, status, search }) {
   return players.map((player) => toPlayerDTO(player, userByPlayer.get(String(player._id))));
 }
 
-export async function getPlayer(id) {
-  const player = await findPlayerOrThrow(id);
+export async function getPlayer(id, academyId) {
+  const player = await findPlayerOrThrow(id, academyId);
   const user = await User.findOne({ player: player._id });
   return toPlayerDTO(player, user);
 }
@@ -107,8 +109,8 @@ export async function getPlayer(id) {
  * Apply validated updates. Name is mirrored to the login account, email
  * updates the login, and isActive also enables/disables the login.
  */
-export async function updatePlayer(id, updates) {
-  const player = await findPlayerOrThrow(id);
+export async function updatePlayer(id, updates, academyId) {
+  const player = await findPlayerOrThrow(id, academyId);
   const user = await User.findOne({ player: player._id });
 
   if (updates.email !== undefined && !user) throw noLoginAccount();
@@ -133,8 +135,8 @@ export async function updatePlayer(id, updates) {
 }
 
 /** New temporary password; the player is signed out everywhere and must change it. */
-export async function resetPlayerPassword(id, { temporaryPassword }) {
-  const player = await findPlayerOrThrow(id);
+export async function resetPlayerPassword(id, { temporaryPassword }, academyId) {
+  const player = await findPlayerOrThrow(id, academyId);
   const user = await User.findOne({ player: player._id });
   if (!user) throw noLoginAccount();
 

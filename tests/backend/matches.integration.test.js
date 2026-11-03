@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { createAcademy } from "@/backend/services/academyService";
 import { GET as eligibleRoute } from "@/app/api/matches/eligible-players/route";
 import { GET as getMatchRoute, PATCH as patchMatchRoute } from "@/app/api/matches/[id]/route";
 import { GET as listMatchesRoute, POST as createMatchRoute } from "@/app/api/matches/route";
@@ -18,6 +19,7 @@ const id = (doc) => String(doc._id);
 // Matches + scoring against a real in-memory MongoDB (docs/API_CONTRACTS.md §2.17-2.21).
 describe("matches API", () => {
   let mongo;
+  let academy;
   let coach;
   let scout;
   let playerCookie;
@@ -57,18 +59,19 @@ describe("matches API", () => {
 
   beforeAll(async () => {
     mongo = await startTestDatabase("sports-academy-matches-test");
-    await createUser({ name: "Coach", email: "coach@academy.test", password: PASSWORD, role: ROLES.COACH });
-    await createUser({ name: "Scout", email: "scout@academy.test", password: PASSWORD, role: ROLES.SCOUT });
+    academy = await createAcademy("Test Academy");
+    await createUser({ academy: academy._id, name: "Coach", email: "coach@academy.test", password: PASSWORD, role: ROLES.COACH });
+    await createUser({ academy: academy._id, name: "Scout", email: "scout@academy.test", password: PASSWORD, role: ROLES.SCOUT });
     coach = (await loginAs("coach@academy.test", PASSWORD)).cookie;
     scout = (await loginAs("scout@academy.test", PASSWORD)).cookie;
 
     // Compulsory tests 1-4 setup: three cricket players; two present, one absent; session closed.
-    p.arjun = await Player.create({ name: "Arjun Mehta", age: 16, sport: "Cricket" });
-    p.bela = await Player.create({ name: "Bela Singh", age: 17, sport: "Cricket" });
-    p.chen = await Player.create({ name: "Chen Li", age: 15, sport: "Cricket" });
+    p.arjun = await Player.create({ academy: academy._id, name: "Arjun Mehta", age: 16, sport: "Cricket" });
+    p.bela = await Player.create({ academy: academy._id, name: "Bela Singh", age: 17, sport: "Cricket" });
+    p.chen = await Player.create({ academy: academy._id, name: "Chen Li", age: 15, sport: "Cricket" });
     await runSession({ marks: [[p.arjun, "PRESENT"], [p.bela, "PRESENT"], [p.chen, "ABSENT"]] });
 
-    const user = await createUser({
+    const user = await createUser({ academy: academy._id,
       name: "Arjun Mehta",
       email: "arjun@academy.test",
       password: PASSWORD,
@@ -123,7 +126,7 @@ describe("matches API", () => {
 
   describe("eligibility", () => {
     it("does not count players present only in an OPEN session", async () => {
-      const dara = await Player.create({ name: "Dara Open", age: 16, sport: "Cricket" });
+      const dara = await Player.create({ academy: academy._id, name: "Dara Open", age: 16, sport: "Cricket" });
       // Another cricket session on a different day, left open.
       await runSession({
         date: "2026-11-05",
@@ -147,11 +150,11 @@ describe("matches API", () => {
     });
 
     it("rejects players of a different sport and inactive players", async () => {
-      const fiona = await Player.create({ name: "Fiona Football", age: 16, sport: "Football" });
+      const fiona = await Player.create({ academy: academy._id, name: "Fiona Football", age: 16, sport: "Football" });
       const res = await createMatch(matchBody([[fiona, 10]]));
       expect((await res.json()).errors[0].message).toBe("Fiona Football plays Football, not Cricket");
 
-      const gone = await Player.create({ name: "Gita Gone", age: 16, sport: "Hockey" });
+      const gone = await Player.create({ academy: academy._id, name: "Gita Gone", age: 16, sport: "Hockey" });
       await runSession({ sport: "Hockey", marks: [[gone, "PRESENT"]] });
       await Player.updateOne({ _id: gone._id }, { isActive: false });
       const inactive = await createMatch(matchBody([[gone, 10]], { sport: "Hockey" }));
@@ -159,7 +162,7 @@ describe("matches API", () => {
     });
 
     it("counts a player present in any closed session that day (multiple sessions)", async () => {
-      const hari = await Player.create({ name: "Hari Twice", age: 16, sport: "Tennis" });
+      const hari = await Player.create({ academy: academy._id, name: "Hari Twice", age: 16, sport: "Tennis" });
       await runSession({ sport: "Tennis", marks: [[hari, "ABSENT"]] });
       await runSession({ sport: "Tennis", marks: [[hari, "PRESENT"]] });
       const res = await createMatch(matchBody([[hari, 6]], { sport: "tennis" }));

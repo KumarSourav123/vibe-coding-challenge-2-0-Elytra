@@ -1,112 +1,79 @@
-# Sports Academy Management System
+# Sports Academy
 
-One integrated **Next.js (App Router, JavaScript)** application with **Tailwind CSS**, **MongoDB Atlas** and **Mongoose**, deployable to **Vercel**. Coaches manage players, practice attendance and matches; players see their own records; scouts see only Ready players.
+A simple web app for sports academies to track **practice attendance**, **match scores** and which players are **ready to be scouted**.
 
-> Status: **Phase 6 – Readiness and Role-Based Access complete.** All 11 compulsory competition tests pass. See [docs/FEATURE_TRACKER.md](docs/FEATURE_TRACKER.md).
+🌐 **Live site:** _add your Vercel link here_
 
-## Quick start
+---
 
-Requirements: Node.js 20.9+ (tested on Node 25), npm.
+## Who uses it
 
-```bash
-npm install
-cp .env.example .env.local     # then set MONGODB_URI, AUTH_SECRET, signup codes, SEED_PASSWORD
-npm run seed                   # creates demo coach / scout / player accounts
-npm run dev                    # http://localhost:3000
-```
-
-Generate `AUTH_SECRET` with:
-
-```bash
-node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
-```
-
-Sign in at `/login` with `coach@academy.test`, `player@academy.test` or `scout@academy.test` and your `SEED_PASSWORD`. Each role lands in its own area (`/coach`, `/player`, `/scout`). The landing page's **System status** section shows the live result of `GET /api/health`.
-
-How accounts are created:
-
-| Role | How |
+| Role | What they do |
 | --- | --- |
-| Player | The Coach adds the player at `/coach/players/new` (profile + login email + temporary password) and shares the details. The player must choose a new password at first sign-in. There's no player sign-up. |
-| Coach / Scout | Self-register at `/register` with the access code from `COACH_SIGNUP_CODE` / `SCOUT_SIGNUP_CODE` |
+| **Head Coach** | Creates the academy and invites coaches and scouts with join codes |
+| **Coach** | Adds players, runs practice sessions, marks attendance, records matches and scores |
+| **Player** | Sees only their own attendance, matches and readiness |
+| **Scout** | Sees only the players who are **Ready** |
 
-All coaches share one academy, so every coach sees every player.
+Every academy's data is private. One academy can never see another academy's players.
 
-Authentication is built only from Node's built-in crypto: scrypt password hashing and HMAC-signed HttpOnly session cookies. No auth SDK is used.
+---
 
-## Scripts
+## How it works
 
-| Command | Purpose |
-| --- | --- |
-| `npm run dev` | Development server (Turbopack) |
-| `npm run build` | Production build |
-| `npm start` | Serve the production build |
-| `npm run lint` | ESLint (Next.js core-web-vitals rules) |
-| `npm test` | Vitest: unit tests + MongoDB integration tests (in-memory MongoDB, no Atlas needed) |
-| `npm run seed` | Create demo accounts in the database from `.env.local` (dev only; skips existing accounts) |
+1. **Create an academy.** Sign up → *Create an academy*. You become its Head Coach.
+2. **Invite people.** Share the **join codes** from the *Academy* page. Coaches and scouts sign up with *Join an academy*.
+3. **Add players.** The coach adds each player with an email and a temporary password, then gives those to the player. The player picks their own password at first sign-in.
+4. **Practice sessions.** Create a session, mark each player **Present** or **Absent**, then **close** it. A closed session can't be changed.
+5. **Matches.** Only players who were **Present** at that day's closed session can be picked. Enter a score for each.
+6. **Readiness.** The app works out who is Ready on its own.
 
-The first `npm test` downloads a MongoDB binary (~100 MB) for `mongodb-memory-server`; later runs are cached.
+### When is a player "Ready"?
 
-## Environment variables
+> **Attendance of 75% or more** (in closed sessions) **and at least 2 matches played.**
 
-| Name | Scope | Description |
-| --- | --- | --- |
-| `MONGODB_URI` | Server only | MongoDB Atlas connection string. Never use in frontend code. |
-| `AUTH_SECRET` | Server only | ≥ 32 random characters, used to sign session cookies. Rotating it signs everyone out. |
-| `COACH_SIGNUP_CODE` | Server only | Access code for coach self-registration (≥ 8 chars). Empty means coach sign-up is disabled. |
-| `SCOUT_SIGNUP_CODE` | Server only | Access code for scout self-registration (≥ 8 chars). Empty means scout sign-up is disabled. |
-| `SEED_PASSWORD` | Dev only | Password for accounts created by `npm run seed`. Not needed on Vercel. |
-| `NEXT_PUBLIC_APP_NAME` | Public | Display name (default "Sports Academy") |
-| `NEXT_PUBLIC_APP_URL` | Public | Base URL, e.g. `http://localhost:3000` |
+---
 
-`.env.local` is git-ignored. Configure the same variables in Vercel → Project → Settings → Environment Variables.
+## Features
 
-## Folder structure
+- Sign in for four roles, each with its own pages
+- Many academies on one site, each kept separate
+- Add, edit, deactivate and reset players
+- Practice sessions with attendance that locks when closed
+- Matches with per-player scores, open to present players only
+- Live readiness for coaches, a personal dashboard for players, and a Ready list for scouts
+- Works on phones and computers
 
-```text
-app/                 Next.js pages and API route handlers
-  api/health/        GET /api/health
-  api/auth/          login, logout, me, register, change-password
-  api/players/       Player CRUD + reset-password (coach only)
-  api/sessions/      Sessions, attendance, close (coach only)
-  api/matches/       Matches, scores, eligible players (coach only)
-  api/coach/ api/player/ api/scout/  Readiness dashboards per role
-  (site)/            Public landing page (header + footer layout)
-  (auth)/            /login and /register (focused, centered layout)
-  (app)/             Signed-in area with sidebar (AppShell), protected by proxy.js:
-    coach/           Overview, players (list/add/details), sessions (list/new/attendance), matches (list/new/scores), readiness
-    player/          Own dashboard (attendance, matches, readiness)
-    scout/           Ready players list + detail
-    account/password Change password (required after a temporary password)
-  layout.js, globals.css  Root layout (Inter font, AuthProvider) and design tokens
-backend/             Server-only code (never import from client components)
-  models/            Mongoose models: User, Player, Session, Match
-  services/          Business logic (routes stay thin)
-  validators/        Request validation
-  middleware/        requireAuth / requireRole guards
-  utils/             Response helpers, error handling, password hashing, constants
-lib/                 Shared server infrastructure
-  mongodb.js         Cached MongoDB connection
-  authToken.js       Signed session tokens + cookie settings
-  roles.js           Role → home path mapping
-proxy.js             Page-level route protection (Next.js 16 Proxy)
-scripts/             CLI tools (seed.mjs + alias loader)
-frontend/            UI code
-  components/ui/     Reusable UI: Button, Card, Badge, Spinner, Container
-  components/layout/ SiteHeader, SiteFooter
-  features/<name>/   Feature folders: api/, components/, hooks/, mocks/, data/
-  utils/             cn(), public config
-tests/               Vitest suites (backend/, frontend/, helpers/)
-docs/                Project documentation (start here)
-```
+---
 
-## Documentation
+## Kept simple or visible for evaluation
 
-- [Team Development Guide](docs/TEAM_DEVELOPMENT_GUIDE.md) – roles, ownership, workflow, Git rules
-- [API Contracts](docs/API_CONTRACTS.md) – the single source of truth for every endpoint
-- [Development Roadmap](docs/DEVELOPMENT_ROADMAP.md) – seven phases, tasks, daily milestones
-- [Feature Tracker](docs/FEATURE_TRACKER.md) – status of every feature
-- [Backend Guide](docs/BACKEND.md) · [Frontend Guide](docs/FRONTEND.md)
-- [Manual Test Plan](docs/MANUAL_TEST_PLAN.md) – step-by-step full test of phases 1–6
-- [AI Prompt Templates](docs/AI_PROMPT_TEMPLATES.md)
-- [Master Development Prompt](MASTER_DEVELOPMENT_PROMPT.md)
+These are on purpose, to make judging easy:
+
+- **Yellow "For evaluation only" box.** It shows demo logins on *Sign in* and the demo academy's join codes on *Join an academy*, with **Use** buttons to fill them in. It's switched on with `EVALUATION_MODE=true` and will be turned off after judging, when the codes become secret again.
+- **Demo accounts.** `coach@academy.test`, `scout@academy.test` and `player@academy.test` are made by `npm run seed` and all share one password.
+- **No emails are sent.** The coach passes login details to players directly.
+- **No "forgot password" email.** The coach resets a player's password instead.
+- **Anyone can create an academy.** It starts empty, so it can't affect anyone else.
+- **Practice sessions can't be edited or deleted** once created. An unused open session simply doesn't count.
+
+---
+
+## Run it on your computer
+
+1. Install: `npm install`
+2. Copy `.env.example` to `.env.local` and fill in `MONGODB_URI`, `AUTH_SECRET` and `SEED_PASSWORD` (the file explains each one).
+3. Create the demo academy and accounts: `npm run seed`
+4. Start: `npm run dev`, then open http://localhost:3000
+
+Run the automated tests with `npm test`.
+
+---
+
+## More details
+
+- [How to test the app, step by step](docs/MANUAL_TEST_PLAN.md) (no coding needed)
+- [Deployment & settings](docs/DEPLOYMENT.md): environment variables, evaluation mode, going live
+- [Technical docs](docs/) for developers: API, backend, frontend and roadmap
+
+Built with Next.js, MongoDB and Tailwind CSS.

@@ -3,6 +3,7 @@
 import Badge from "@/frontend/components/ui/Badge";
 import Button from "@/frontend/components/ui/Button";
 import Spinner from "@/frontend/components/ui/Spinner";
+import { APP_NAME } from "@/frontend/utils/config";
 import { cn } from "@/frontend/utils/cn";
 import { useHealthStatus } from "../hooks/useHealthStatus";
 
@@ -12,11 +13,7 @@ const STATE_UI = {
   disconnected: { tone: "danger", label: "Disconnected", ring: "bg-rose-400", dot: "bg-rose-500" },
 };
 
-const HINTS = {
-  DB_NOT_CONFIGURED: "Set MONGODB_URI in .env.local and restart the dev server.",
-  DB_CONNECTION_FAILED: "Check the connection string and Atlas network access settings.",
-  NETWORK_ERROR: "The API server could not be reached.",
-};
+const UNAVAILABLE = "We can't reach the service right now. Please try again in a moment.";
 
 /** Live database connection status, backed by GET /api/health. */
 export default function HealthStatus() {
@@ -34,18 +31,14 @@ export default function HealthStatus() {
         </span>
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-sm font-semibold text-slate-900">Database</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{APP_NAME} service</h3>
             <Badge tone={ui.tone}>{ui.label}</Badge>
           </div>
           <p className="mt-1 text-sm text-slate-500" aria-live="polite">
-            {state === "loading" && "Contacting /api/health..."}
+            {state === "loading" && "Checking..."}
             {state === "connected" &&
-              `MongoDB is reachable${result?.latencyMs != null ? ` · ${result.latencyMs} ms` : ""}`}
-            {state === "disconnected" && (
-              <>
-                {result?.message}. {HINTS[result?.errorCode]}
-              </>
-            )}
+              `All systems running${result?.latencyMs != null ? ` · ${result.latencyMs} ms` : ""}`}
+            {state === "disconnected" && UNAVAILABLE}
           </p>
           {result?.checkedAt && state !== "loading" && (
             <p className="mt-1 text-xs text-slate-400">Checked {new Date(result.checkedAt).toLocaleTimeString()}</p>

@@ -3,7 +3,7 @@ import { cn } from "@/frontend/utils/cn";
 import Icon from "./Icon";
 
 const VARIANTS = {
-  primary: "bg-slate-900 text-white shadow-sm hover:bg-slate-800 focus-visible:outline-slate-900",
+  primary: "bg-brand-600 text-brand-fg shadow-sm hover:bg-brand-700 focus-visible:outline-brand-600",
   secondary:
     "bg-white text-slate-900 shadow-sm ring-1 ring-inset ring-slate-200 hover:bg-slate-50 focus-visible:outline-slate-400",
   ghost: "text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-slate-400",

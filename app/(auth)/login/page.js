@@ -15,12 +15,6 @@ export default function LoginPage() {
       <Suspense>
         <LoginForm />
       </Suspense>
-      {process.env.NODE_ENV !== "production" && (
-        <p className="mt-6 border-t border-slate-100 pt-4 text-xs leading-relaxed text-slate-500">
-          Development: <code className="font-mono text-slate-700">npm run seed</code> creates coach@, player@ and
-          scout@academy.test with your SEED_PASSWORD.
-        </p>
-      )}
     </AuthCard>
   );
 }

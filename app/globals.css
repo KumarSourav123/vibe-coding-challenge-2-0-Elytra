@@ -5,29 +5,255 @@
     Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
 
-  /* Brand accent: used sparingly for status and highlights. Primary actions use ink (slate-900). */
-  --color-brand-50: #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-200: #a7f3d0;
-  --color-brand-400: #34d399;
-  --color-brand-500: #10b981;
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-brand-900: #064e3b;
+  /*
+   * Varsity theme: cream paper, navy ink, royal-navy accent with gold highlights.
+   * The neutral scale is remapped so every `slate-*` / `white` class picks up the warm paper and navy ink.
+   */
+  --color-white: #fffdf8;
+  --color-slate-50: #f9f5ec;
+  --color-slate-100: #f1ebdd;
+  --color-slate-200: #e5dcc8;
+  --color-slate-300: #d4c8ae;
+  --color-slate-400: #857c6b;
+  --color-slate-500: #5f584a;
+  --color-slate-600: #4b4538;
+  --color-slate-700: #2a3352;
+  --color-slate-800: #1c2440;
+  --color-slate-900: #121a33;
+
+  /* Brand accent: primary buttons, active nav, highlights. 400/500 are gold, used only for small highlights.
+     `brand-fg` is text on brand-600. */
+  --color-brand-50: #eef1fb;
+  --color-brand-100: #dde3f6;
+  --color-brand-200: #bcc7ec;
+  --color-brand-400: #e8b931;
+  --color-brand-500: #d9a514;
+  --color-brand-600: #1f3a93;
+  --color-brand-700: #172c70;
+  --color-brand-900: #0f1d4a;
+  --color-brand-fg: #ffffff;
+
+  /* Status shades darkened to meet WCAG AA (white text on solid, red text on tint). */
+  --color-emerald-600: #047857;
+  --color-rose-600: #be123c;
 
   --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 3px 0 rgb(15 23 42 / 0.03);
   --shadow-raised: 0 1px 2px 0 rgb(15 23 42 / 0.05), 0 8px 24px -6px rgb(15 23 42 / 0.08);
 }
 
+/* Logo wordmark accent ("IQ"): brand lime, a shade deeper so it stays legible on light backgrounds. */
+:root {
+  --logo-lime: #5aae22;
+}
+
+/*
+ * ============ VISUAL LAYER ============
+ * Depth, atmosphere and accent details on top of the theme above. Pure CSS: it targets the classes and
+ * attributes components already render, so no markup changes. Unlayered, so it wins over utilities.
+ */
 :root {
   color-scheme: light;
+
+  --shadow-ink: color-mix(in oklab, var(--color-slate-900) 100%, transparent);
+  --glow-strength: 26%;
+  --dot-strength: 7%;
+  --highlight: inset 0 1px 0 0 rgb(255 255 255 / 0.6);
+
+  --ink-a: color-mix(in oklab, var(--shadow-ink) 5%, transparent);
+  --ink-b: color-mix(in oklab, var(--shadow-ink) 9%, transparent);
+  --ink-c: color-mix(in oklab, var(--shadow-ink) 16%, transparent);
+  --glow: color-mix(in oklab, var(--color-brand-600) var(--glow-strength), transparent);
+
+  /* Layered elevation: tight contact shadow + soft ambient + faint accent-tinted bloom. */
+  --elev-xs: 0 1px 2px 0 var(--ink-a);
+  --elev-sm: 0 1px 2px 0 var(--ink-b), 0 2px 6px -2px var(--ink-a);
+  --elev-card: var(--highlight), 0 1px 2px 0 var(--ink-a), 0 4px 14px -4px var(--ink-b), 0 18px 40px -24px var(--glow);
+  --elev-raised: var(--highlight), 0 1px 3px 0 var(--ink-b), 0 14px 34px -10px var(--ink-c), 0 30px 70px -30px var(--glow);
+}
+
+
+.shadow-xs {
+  --tw-shadow: var(--elev-xs);
+}
+.shadow-sm {
+  --tw-shadow: var(--elev-sm);
+}
+.shadow-card {
+  --tw-shadow: var(--elev-card);
+}
+.shadow-raised {
+  --tw-shadow: var(--elev-raised);
+}
+.shadow-card,
+.shadow-raised {
+  transition:
+    box-shadow 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+/* Clickable cards lift on hover. */
+a.shadow-card:hover,
+a:hover > .shadow-card {
+  --tw-shadow: var(--elev-raised);
+  border-color: color-mix(in oklab, var(--color-brand-600) 30%, var(--color-slate-200));
+}
+
+/* Page atmosphere: two soft accent blooms + a faint dot grid, fixed behind the content. */
+body,
+.min-h-screen.bg-slate-50,
+.min-h-screen.bg-white {
+  background-image:
+    radial-gradient(56rem 34rem at 105% -8%, color-mix(in oklab, var(--color-brand-500) 15%, transparent), transparent 62%),
+    radial-gradient(44rem 30rem at -8% 4%, color-mix(in oklab, var(--color-brand-400) 11%, transparent), transparent 60%),
+    radial-gradient(circle at 1px 1px, color-mix(in oklab, var(--color-slate-900) var(--dot-strength), transparent) 1px, transparent 0);
+  background-size:
+    auto,
+    auto,
+    22px 22px;
+  background-attachment: fixed;
+}
+
+/* Glass sidebar so the atmosphere shows through. */
+aside.bg-white {
+  background-color: color-mix(in oklab, var(--color-white) 72%, transparent);
+  backdrop-filter: blur(18px) saturate(1.4);
+}
+
+/* Accent surfaces (primary button, logo tile, icon tiles): top sheen + coloured glow. */
+.bg-brand-600 {
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 55%);
+}
+.bg-brand-600.shadow-sm {
+  --tw-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.22), 0 1px 2px 0 color-mix(in oklab, var(--color-brand-700) 35%, transparent),
+    0 8px 20px -8px color-mix(in oklab, var(--color-brand-600) 70%, transparent);
+  transition-property: color, background-color, box-shadow;
+  transition-duration: 180ms;
+}
+.bg-brand-600.shadow-sm:hover {
+  --tw-shadow:
+    inset 0 1px 0 0 rgb(255 255 255 / 0.22), 0 1px 2px 0 color-mix(in oklab, var(--color-brand-700) 35%, transparent),
+    0 12px 28px -8px color-mix(in oklab, var(--color-brand-600) 85%, transparent);
+}
+.rounded-lg.bg-brand-600:not(.shadow-sm) {
+  box-shadow: 0 4px 12px -4px color-mix(in oklab, var(--color-brand-600) 70%, transparent);
+}
+
+/* Role / home icon tiles pick up the accent instead of plain ink. */
+.h-10.w-10.bg-slate-900 {
+  background-color: var(--color-brand-600);
+  background-image: linear-gradient(180deg, rgb(255 255 255 / 0.18), rgb(255 255 255 / 0) 55%);
+  color: var(--color-brand-fg);
+  box-shadow: 0 6px 16px -6px color-mix(in oklab, var(--color-brand-600) 70%, transparent);
+}
+
+/* Active nav: accent rail + tint fade. */
+nav [aria-current="page"] {
+  background-image: linear-gradient(90deg, color-mix(in oklab, var(--color-brand-600) 14%, transparent), transparent 85%);
+  box-shadow: inset 3px 0 0 0 var(--color-brand-600);
+}
+
+/* Titles: ink fading into the accent. Large text only (24px+), 3:1 holds at the accent end. */
+h1 {
+  background-image: linear-gradient(100deg, var(--color-slate-900) 35%, var(--color-brand-700));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Key numbers in stat tiles use the accent; the tile gets an accent top rule and tinted icon chip. */
+div.rounded-xl.p-5.shadow-card {
+  position: relative;
+  overflow: hidden;
+}
+div.rounded-xl.p-5.shadow-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand-600), var(--color-brand-400));
+}
+div.rounded-xl.p-5.shadow-card .text-3xl.tabular-nums {
+  color: var(--color-brand-700);
+}
+div.rounded-xl.p-5.shadow-card .rounded-lg.bg-slate-50 {
+  background-color: var(--color-brand-50);
+  color: var(--color-brand-600);
+  --tw-ring-color: color-mix(in oklab, var(--color-brand-600) 20%, transparent);
+}
+
+/* Focused fields glow in the accent (error fields keep their red). */
+input:focus:not([aria-invalid="true"]),
+select:focus:not([aria-invalid="true"]),
+textarea:focus:not([aria-invalid="true"]) {
+  border-color: var(--color-brand-600);
+  --tw-ring-color: color-mix(in oklab, var(--color-brand-600) 18%, transparent);
+}
+
+/* Status badges get a hairline ring in their own hue so they read as chips. */
+.bg-emerald-50.text-emerald-700 {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-emerald-500) 30%, transparent);
+}
+.bg-rose-50.text-rose-700 {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-rose-500) 30%, transparent);
+}
+.bg-amber-50.text-amber-800 {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-amber-500) 35%, transparent);
+}
+.bg-sky-50.text-sky-700 {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--color-sky-500) 30%, transparent);
+}
+
+/* Landing hero + auth pages: stronger accent bloom behind the headline / form. */
+section.isolate.overflow-hidden {
+  background-image:
+    radial-gradient(40rem 26rem at 80% 30%, color-mix(in oklab, var(--color-brand-500) 18%, transparent), transparent 65%),
+    radial-gradient(30rem 22rem at 10% 90%, color-mix(in oklab, var(--color-brand-400) 12%, transparent), transparent 65%);
+}
+.pointer-events-none.absolute.inset-x-0.top-0.h-80 {
+  height: 30rem;
+  background-image: radial-gradient(
+    ellipse at top,
+    color-mix(in oklab, var(--color-brand-500) 22%, transparent),
+    transparent 70%
+  );
+}
+
+/* Readiness rule panel: ink slab with accent aurora. */
+.rounded-2xl.bg-slate-900 {
+  background-image:
+    radial-gradient(36rem 20rem at 100% 0%, color-mix(in oklab, var(--color-brand-500) 45%, transparent), transparent 70%),
+    radial-gradient(28rem 18rem at 0% 100%, color-mix(in oklab, var(--color-brand-400) 25%, transparent), transparent 70%);
+  box-shadow: 0 30px 60px -30px color-mix(in oklab, var(--color-brand-600) 60%, transparent);
+}
+
+/* Progress fills: accent on the landing preview, status hues keep their meaning but gain a soft glow. */
+.h-full.rounded-full.bg-slate-900 {
+  background-color: var(--color-brand-600);
+  background-image: linear-gradient(90deg, var(--color-brand-600), var(--color-brand-400));
+  box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--color-brand-600) 60%, transparent);
+}
+.h-full.rounded-full.bg-emerald-500 {
+  box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--color-emerald-500) 60%, transparent);
+}
+.h-full.rounded-full.bg-amber-500 {
+  box-shadow: 0 2px 8px -2px color-mix(in oklab, var(--color-amber-500) 60%, transparent);
+}
+
+/* Thin themed scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
 }
 
 body {
   @apply bg-slate-50 text-slate-900 antialiased;
   font-feature-settings: "cv11", "ss01";
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
 }
 
 ::selection {
-  @apply bg-slate-900 text-white;
+  @apply bg-brand-600 text-brand-fg;
 }

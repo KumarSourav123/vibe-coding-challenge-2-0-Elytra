@@ -11,6 +11,7 @@ import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { useDebouncedValue } from "@/frontend/hooks/useDebouncedValue";
 import { lookupJoinCode, register, registerAcademy } from "../api/authApi";
 import EvaluationPanel from "@/frontend/features/evaluation/components/EvaluationPanel";
+import { markAcademyCreated } from "@/frontend/features/onboarding/onboardingStore";
 import { useAuth } from "../context/AuthProvider";
 import { ROLE_LABELS } from "../data/roleLabels";
 
@@ -90,6 +91,7 @@ export default function RegisterForm() {
       : await register({ joinCode: values.joinCode, ...person });
 
     if (result.ok) {
+      if (isCreate) markAcademyCreated(values.academyName.trim()); // shows the "invite your team" popup
       applySession(result);
       router.replace(result.homePath);
       return;

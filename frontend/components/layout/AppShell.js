@@ -8,6 +8,8 @@ import Icon from "@/frontend/components/ui/Icon";
 import Logo from "@/frontend/components/ui/Logo";
 import { useAuth } from "@/frontend/features/auth/context/AuthProvider";
 import { ROLE_LABELS } from "@/frontend/features/auth/data/roleLabels";
+import { tourGroupFor } from "@/frontend/features/onboarding/data/tourSteps";
+import { replayTourGroup } from "@/frontend/features/onboarding/onboardingStore";
 import { cn } from "@/frontend/utils/cn";
 import { ACCOUNT_NAV, isNavItemActive, NAV_BY_ROLE } from "./navigation";
 
@@ -37,11 +39,11 @@ function NavLink({ item, pathname, onNavigate }) {
       className={cn(
         "flex h-9 items-center gap-3 rounded-lg px-3 text-sm transition-colors",
         active
-          ? "bg-slate-100 font-medium text-slate-900"
+          ? "bg-brand-50 font-medium text-brand-700"
           : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
       )}
     >
-      <Icon name={item.icon} className={active ? "text-slate-900" : "text-slate-400"} />
+      <Icon name={item.icon} className={active ? "text-brand-600" : "text-slate-400"} />
       {item.label}
     </Link>
   );
@@ -101,6 +103,24 @@ function SidebarContent({ onNavigate }) {
                   {ACCOUNT_NAV.map((item) => (
                     <NavLink key={item.href} item={item} pathname={pathname} onNavigate={onNavigate} />
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onNavigate?.();
+                      const group = tourGroupFor(pathname);
+                      if (group) {
+                        replayTourGroup(group.id);
+                      } else if (homePath) {
+                        // No steps for this page: replay the dashboard tour there.
+                        replayTourGroup(tourGroupFor(homePath)?.id);
+                        router.push(homePath);
+                      }
+                    }}
+                    className="flex h-9 w-full items-center gap-3 rounded-lg px-3 text-sm text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900"
+                  >
+                    <Icon name="sparkle" className="text-slate-400" />
+                    Tutorial
+                  </button>
                 </div>
               </div>
             )}

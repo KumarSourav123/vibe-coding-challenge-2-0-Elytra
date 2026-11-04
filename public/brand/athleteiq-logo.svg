@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">ATHLETEIQ logo</title>
+  <desc id="desc">A modern sports technology logo with a dynamic A and Q-inspired mark and ATHLETEIQ wordmark.</desc>
+  <defs>
+    <linearGradient id="lime" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B8F34A"/>
+      <stop offset="1" stop-color="#75D62B"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(44 30)">
+    <path d="M145 18 L34 270 H91 L145 146 L199 270 H256 Z" fill="none" stroke="#101B2B" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M145 18 L34 270 H91 L145 146" fill="none" stroke="url(#lime)" stroke-width="27" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M110 190 H181" fill="none" stroke="#101B2B" stroke-width="19" stroke-linecap="round"/>
+    <path d="M191 206 C218 206 238 226 238 251 C238 276 218 296 193 296 C168 296 148 276 148 251" fill="none" stroke="url(#lime)" stroke-width="20" stroke-linecap="round"/>
+    <path d="M218 276 L251 309" fill="none" stroke="#101B2B" stroke-width="18" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(350 0)">
+    <text x="0" y="190" font-family="Arial, Helvetica, sans-serif" font-size="100" font-weight="800" letter-spacing="1.5" fill="#101B2B">ATHLETE</text>
+    <text x="565" y="190" font-family="Arial, Helvetica, sans-serif" font-size="100" font-weight="800" letter-spacing="1.5" fill="#82D936">IQ</text>
+    <rect x="4" y="225" width="94" height="8" rx="4" fill="#82D936"/>
+    <text x="4" y="278" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="600" letter-spacing="5.2" fill="#5D6877">TRACK TALENT. BUILD CHAMPIONS.</text>
+  </g>
+</svg>

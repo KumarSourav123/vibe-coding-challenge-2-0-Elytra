@@ -66,7 +66,7 @@ export default function HomePage() {
           <SectionHeading
             eyebrow="System status"
             title="Live service health"
-            description="Checked against the backend health endpoint each time you load this page."
+            description="A quick check that everything is up and running, refreshed each time you open this page."
           />
           <div className="mt-8">
             <HealthStatus />

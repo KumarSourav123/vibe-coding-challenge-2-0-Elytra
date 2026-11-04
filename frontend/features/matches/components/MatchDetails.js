@@ -11,8 +11,8 @@ import EmptyState from "@/frontend/components/ui/EmptyState";
 import ErrorState from "@/frontend/components/ui/ErrorState";
 import FormSection, { FormActions } from "@/frontend/components/ui/FormSection";
 import Input from "@/frontend/components/ui/Input";
+import Icon from "@/frontend/components/ui/Icon";
 import { LoadingBlock } from "@/frontend/components/ui/Spinner";
-import StatCard from "@/frontend/components/ui/StatCard";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { formatDayLabel } from "@/frontend/utils/date";
 import { getMatch, updateMatch } from "../api/matchesApi";
@@ -23,19 +23,103 @@ const BACK = { backHref: "/coach/matches", backLabel: "Matches" };
 
 const formatScore = (n) => (Number.isInteger(n) ? n : Number(n.toFixed(2)));
 
-function Scoreboard({ match }) {
+/** Big scoreboard banner with the match totals. */
+function ScoreBanner({ match, average }) {
+  const { summary } = match;
+  const stats = [
+    { label: "Players", value: summary.participants },
+    { label: "Total score", value: formatScore(summary.totalScore) },
+    { label: "Top score", value: summary.topScore != null ? formatScore(summary.topScore) : "—" },
+    { label: "Average", value: average ?? "—" },
+  ];
+
   return (
-    <Card title="Scores" description="Highest score first." padding={false}>
+    <section aria-label="Match summary" className="overflow-hidden rounded-2xl bg-slate-900 px-6 py-6 sm:px-8">
+      <div className="flex flex-wrap items-center gap-2 text-xs font-semibold tracking-widest text-slate-400 uppercase">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-2.5 py-1 text-white">
+          <Icon name="trophy" className="h-3.5 w-3.5 text-brand-400" />
+          {match.sport}
+        </span>
+        <span>Full time</span>
+      </div>
+      <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4">
+        {stats.map((stat) => (
+          <div key={stat.label} className="border-l-2 border-white/15 pl-4">
+            <dt className="text-xs font-medium text-slate-400">{stat.label}</dt>
+            <dd className="mt-1 text-3xl font-bold tracking-tight text-white tabular-nums">{stat.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  );
+}
+
+const PODIUM = [
+  { place: 2, height: "h-16", block: "bg-slate-200 text-slate-700", medal: "bg-slate-400" },
+  { place: 1, height: "h-24", block: "bg-brand-600 text-brand-fg", medal: "bg-amber-500" },
+  { place: 3, height: "h-12", block: "bg-slate-100 text-slate-600", medal: "bg-amber-700" },
+];
+
+/** Top three scorers on a podium (2nd, 1st, 3rd). */
+function Podium({ participants }) {
+  if (participants.length === 0) return null;
+  return (
+    <Card title="Top performers" description="The match's three highest scores.">
+      <div className="grid grid-cols-3 items-end gap-3 sm:gap-5">
+        {PODIUM.map(({ place, height, block, medal }) => {
+          const entry = participants[place - 1];
+          if (!entry) return <div key={place} />;
+          return (
+            <div key={place} className="flex min-w-0 flex-col items-center text-center">
+              <div className="relative">
+                <Avatar name={entry.player.name} size={place === 1 ? "lg" : "md"} />
+                <span
+                  className={`absolute -right-1 -bottom-1 grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-white ring-2 ring-white ${medal}`}
+                >
+                  {place}
+                </span>
+              </div>
+              <p className="mt-2 w-full truncate text-sm font-semibold text-slate-900">{entry.player.name}</p>
+              <p className="text-xs text-slate-500 tabular-nums">{formatScore(entry.score)} pts</p>
+              <div className={`mt-3 grid w-full place-items-center rounded-t-lg text-xl font-bold ${height} ${block}`}>
+                {place}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
+function Scoreboard({ match }) {
+  const top = match.participants[0]?.score || 0;
+  return (
+    <Card title="Full scoreboard" description="Highest score first." padding={false}>
       <ol className="divide-y divide-slate-100">
         {match.participants.map((entry, index) => (
           <li key={entry.player.id} className="flex items-center gap-4 px-5 py-3 sm:px-6">
-            <span className="w-5 text-right text-sm font-medium text-slate-400 tabular-nums">{index + 1}</span>
+            <span
+              className={`grid h-6 w-6 shrink-0 place-items-center rounded-md text-xs font-semibold tabular-nums ${
+                index === 0 ? "bg-brand-600 text-brand-fg" : index < 3 ? "bg-brand-50 text-brand-700" : "text-slate-400"
+              }`}
+            >
+              {index + 1}
+            </span>
             <Avatar name={entry.player.name} size="sm" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-slate-900">{entry.player.name}</p>
-              {!entry.player.isActive && <Badge className="mt-0.5">Inactive</Badge>}
+              <div className="flex items-center gap-2">
+                <p className="truncate text-sm font-medium text-slate-900">{entry.player.name}</p>
+                {!entry.player.isActive && <Badge>Inactive</Badge>}
+              </div>
+              <div className="mt-1.5 h-1.5 rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-brand-500"
+                  style={{ width: `${top > 0 ? Math.max((entry.score / top) * 100, 2) : 0}%` }}
+                />
+              </div>
             </div>
-            <span className="text-lg font-semibold text-slate-900 tabular-nums">{formatScore(entry.score)}</span>
+            <span className="w-12 text-right text-lg font-semibold text-slate-900 tabular-nums">{formatScore(entry.score)}</span>
           </li>
         ))}
       </ol>
@@ -208,17 +292,8 @@ export default function MatchDetails({ matchId }) {
         />
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard label="Players" icon="users" value={summary.participants} />
-            <StatCard label="Total score" icon="activity" value={formatScore(summary.totalScore)} />
-            <StatCard
-              label="Top score"
-              icon="trophy"
-              value={summary.topScore != null ? formatScore(summary.topScore) : "—"}
-              hint={summary.topScorer?.name}
-            />
-            <StatCard label="Average" icon="target" value={average ?? "—"} />
-          </div>
+          <ScoreBanner match={match} average={average} />
+          <Podium participants={match.participants} />
           <Scoreboard match={match} />
         </div>
       )}

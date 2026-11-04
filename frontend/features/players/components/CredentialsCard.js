@@ -10,7 +10,7 @@ import Icon from "@/frontend/components/ui/Icon";
  */
 export default function CredentialsCard({ name, email, password, title }) {
   const [copied, setCopied] = useState(false);
-  const text = `Sports Academy login for ${name}\nEmail: ${email}\nTemporary password: ${password}\nYou will be asked to choose a new password when you first sign in.`;
+  const text = `AthleteIQ login for ${name}\nEmail: ${email}\nTemporary password: ${password}\nYou will be asked to choose a new password when you first sign in.`;
 
   async function handleCopy() {
     try {

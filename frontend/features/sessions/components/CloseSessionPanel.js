@@ -39,6 +39,7 @@ export default function CloseSessionPanel({ session, dirty, onClosed }) {
 
   return (
     <Card
+      data-tour="close-session"
       title="Close session"
       description="Locks attendance permanently. Closed sessions count toward each player's attendance %."
     >

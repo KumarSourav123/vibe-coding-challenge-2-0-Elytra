@@ -29,5 +29,10 @@
     "mongodb-memory-server": "^11.3.0",
     "tailwindcss": "^4.3.3",
     "vitest": "^4.1.12"
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "disablePostinstall": "1"
+    }
   }
 }

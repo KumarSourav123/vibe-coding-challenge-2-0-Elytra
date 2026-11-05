@@ -104,7 +104,30 @@ export default function PlayerList() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: one tappable card per player. Tablets and up: the full table. */}
+          <ul className="divide-y divide-slate-100 text-sm md:hidden">
+            {players.map((player) => (
+              <li key={player.id}>
+                <Link
+                  href={`/coach/players/${player.id}`}
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-slate-50"
+                >
+                  <Avatar name={player.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-slate-900">{player.name}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {player.sport} · {player.age} yrs
+                    </p>
+                    <div className="mt-1.5">
+                      <PlayerStatusBadges player={player} />
+                    </div>
+                  </div>
+                  <Icon name="chevronRight" className="shrink-0 text-slate-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>

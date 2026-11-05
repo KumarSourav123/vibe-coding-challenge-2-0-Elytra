@@ -2,8 +2,9 @@ import { useId } from "react";
 import { cn } from "@/frontend/utils/cn";
 import Icon from "./Icon";
 
+// 16px text on phones stops iOS Safari from zooming the page when a field is tapped; 14px from `sm` up.
 export const FIELD_BASE =
-  "block h-10 w-full rounded-lg border bg-white px-3 text-sm text-slate-900 shadow-xs transition-colors " +
+  "block h-11 w-full rounded-lg border bg-white px-3 text-base text-slate-900 shadow-xs transition-colors sm:h-10 sm:text-sm " +
   "placeholder:text-slate-400 focus:outline-none focus:ring-4 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500";
 
 export const FIELD_STATE = {

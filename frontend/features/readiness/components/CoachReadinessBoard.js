@@ -49,7 +49,7 @@ export default function CoachReadinessBoard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
         <StatCard label="Players" icon="users" value={summary ? summary.players : null} />
         <StatCard label="Ready" icon="checkCircle" value={summary ? summary.ready : null} hint="Visible to scouts (if active)" />
         <StatCard label="Not ready" icon="clock" value={summary ? summary.notReady : null} />
@@ -82,7 +82,46 @@ export default function CoachReadinessBoard() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Phones: one tappable card per player. Tablets and up: the full table. */}
+            <ul className="divide-y divide-slate-100 text-sm md:hidden">
+              {rows.map(({ player, readiness: r }) => (
+                <li key={player.id}>
+                  <Link
+                    href={`/coach/players/${player.id}`}
+                    className="flex items-start gap-3 px-4 py-3.5 transition-colors active:bg-slate-50"
+                  >
+                    <Avatar name={player.name} size="sm" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900">{player.name}</p>
+                          <p className="text-xs text-slate-500">
+                            {player.sport}
+                            {!player.isActive && " · inactive"}
+                          </p>
+                        </div>
+                        <ReadinessBadge isReady={r.isReady} />
+                      </div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="w-10 shrink-0 font-medium text-slate-900 tabular-nums">{r.attendancePercent}%</span>
+                        <ReadinessMeter
+                          compact
+                          value={r.attendancePercent}
+                          max={100}
+                          target={r.requirements.minAttendancePercent}
+                          met={r.completedSessions > 0 && r.sessionsAttended * 100 >= r.requirements.minAttendancePercent * r.completedSessions}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {r.sessionsAttended}/{r.completedSessions} sessions · {r.matchesPlayed}/{r.requirements.minMatchesPlayed} matches
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">{readinessSummary(r)}</p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50/60">
                   <tr>
@@ -143,7 +182,7 @@ export default function CoachReadinessBoard() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
+            <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
               <span>
                 {rows.length} player{rows.length === 1 ? "" : "s"} · Ready = attendance ≥ 75% and ≥ 2 matches
               </span>

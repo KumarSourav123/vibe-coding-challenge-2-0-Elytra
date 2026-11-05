@@ -66,7 +66,40 @@ export default function ScoutPlayerList() {
         />
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: one tappable card per player. Tablets and up: the full table. */}
+          <ul className="divide-y divide-slate-100 text-sm md:hidden">
+            {rows.map(({ player, readiness, performance }) => (
+              <li key={player.id}>
+                <Link
+                  href={`/scout/players/${player.id}`}
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-slate-50"
+                >
+                  <Avatar name={player.name} size="sm" />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium text-slate-900">{player.name}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {player.sport} · {player.age} yrs
+                    </p>
+                    <dl className="mt-2 grid grid-cols-4 gap-2 text-xs">
+                      {[
+                        ["Attend.", `${readiness.attendancePercent}%`],
+                        ["Matches", readiness.matchesPlayed],
+                        ["Avg", formatScore(performance.averageScore)],
+                        ["Best", formatScore(performance.bestScore)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="min-w-0">
+                          <dt className="truncate text-slate-500">{label}</dt>
+                          <dd className="font-semibold text-slate-900 tabular-nums">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </div>
+                  <Icon name="chevronRight" className="shrink-0 text-slate-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>

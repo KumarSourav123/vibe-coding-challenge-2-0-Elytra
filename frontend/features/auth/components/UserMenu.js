@@ -14,7 +14,8 @@ export default function UserMenu() {
   if (status === "authenticated") {
     return (
       <Button href={homePath} size="md" iconRight="arrowRight">
-        Open dashboard
+        <span className="sm:hidden">Dashboard</span>
+        <span className="hidden sm:inline">Open dashboard</span>
       </Button>
     );
   }

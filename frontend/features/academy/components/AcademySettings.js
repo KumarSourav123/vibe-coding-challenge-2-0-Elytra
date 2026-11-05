@@ -70,7 +70,7 @@ function JoinCodeCard({ role, code, onRegenerated }) {
           <Alert tone="warning" title="Replace this code?">
             The current code will stop working immediately. People who already joined are not affected.
           </Alert>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             <Button variant="secondary" size="sm" onClick={() => setConfirming(false)} disabled={busy}>
               Cancel
             </Button>
@@ -107,7 +107,7 @@ function RenameForm({ academy, onSaved }) {
   return (
     <Card title="Academy name" description="Shown to everyone in your academy.">
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <Input aria-label="Academy name" value={name} onChange={(e) => setName(e.target.value)} error={error} className="flex-1" disabled={saving} />
+        <Input aria-label="Academy name" placeholder="e.g. Delhi Cricket Academy" value={name} onChange={(e) => setName(e.target.value)} error={error} className="flex-1" disabled={saving} />
         <Button type="submit" disabled={saving || !changed}>
           {saving ? "Saving..." : "Save"}
         </Button>

@@ -19,7 +19,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="min-h-screen font-sans">
+      {/* overflow-x-clip: no sideways page scroll on phones (unlike overflow-hidden it keeps sticky headers working). */}
+      <body className="min-h-screen overflow-x-clip font-sans">
         <AuthProvider>
           {children}
           <Onboarding />

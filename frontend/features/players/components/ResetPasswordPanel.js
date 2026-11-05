@@ -75,13 +75,14 @@ export default function ResetPasswordPanel({ player, onReset }) {
               label="New temporary password"
               autoComplete="off"
               className="flex-1"
+              placeholder="Min. 8 characters, or Generate"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={submitting}
             />
             <Button
               variant="secondary"
-              className="h-10"
+              className="h-11 sm:h-10"
               icon="sparkle"
               onClick={() => setPassword(generateTemporaryPassword())}
               disabled={submitting}
@@ -89,7 +90,7 @@ export default function ResetPasswordPanel({ player, onReset }) {
               Generate
             </Button>
           </div>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             <Button variant="secondary" onClick={() => setOpen(false)} disabled={submitting}>
               Cancel
             </Button>

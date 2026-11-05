@@ -99,7 +99,30 @@ export default function SessionList() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: one tappable card per session. Tablets and up: the full table. */}
+          <ul className="divide-y divide-slate-100 text-sm md:hidden">
+            {sessions.map((session) => (
+              <li key={session.id}>
+                <Link
+                  href={`/coach/sessions/${session.id}`}
+                  className="flex items-center gap-3 px-4 py-3.5 transition-colors active:bg-slate-50"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900">{formatDayLabel(session.date)}</p>
+                      <SessionStatusBadge status={session.status} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {session.sport} · {attendanceLabel(session)}
+                    </p>
+                    <Progress session={session} />
+                  </div>
+                  <Icon name="chevronRight" className="shrink-0 text-slate-300" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>

@@ -117,6 +117,7 @@ export default function PlayerForm({ mode, player, onSubmit, onCancel, submitLab
             inputMode="numeric"
             min={5}
             max={60}
+            placeholder="e.g. 16"
             value={values.age}
             onChange={(e) => setField("age", e.target.value)}
             error={fieldErrors.age}
@@ -154,7 +155,8 @@ export default function PlayerForm({ mode, player, onSubmit, onCancel, submitLab
             label="Email"
             type="email"
             autoComplete="off"
-            placeholder="player@academy.test"
+            placeholder="e.g. asha.rao@gmail.com"
+            hint="Any valid email works."
             value={values.email}
             onChange={(e) => setField("email", e.target.value)}
             error={fieldErrors.email}
@@ -166,6 +168,7 @@ export default function PlayerForm({ mode, player, onSubmit, onCancel, submitLab
                 label="Temporary password"
                 autoComplete="off"
                 className="flex-1"
+                placeholder="Min. 8 characters, or Generate"
                 hint="At least 8 characters. You'll see it once more after saving."
                 value={values.temporaryPassword}
                 onChange={(e) => setField("temporaryPassword", e.target.value)}
@@ -175,7 +178,7 @@ export default function PlayerForm({ mode, player, onSubmit, onCancel, submitLab
               {/* mt-6.5 = label height + gap, so the button lines up with the input. */}
               <Button
                 variant="secondary"
-                className="mt-6.5 h-10"
+                className="mt-6.5 h-11 sm:h-10"
                 icon="sparkle"
                 onClick={() => setField("temporaryPassword", generateTemporaryPassword())}
                 disabled={submitting}

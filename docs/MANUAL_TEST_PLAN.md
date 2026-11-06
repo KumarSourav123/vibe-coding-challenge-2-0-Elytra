@@ -26,6 +26,8 @@ Everything below works the same on both. Wherever this guide says **"the site"**
 
 ### Shortcut for judges (evaluation mode)
 
+When you first open the site, a popup introduces the **bonus feature: multiple academies**. Click **Create your own academy** to try it, or **Got it** to close it. It appears once per browser.
+
 If the site runs with **evaluation mode** on, you'll see a yellow **"For evaluation only"** box:
 - On **Sign in**, with ready-made Coach, Scout and Player logins. Click **Use** to fill the form.
 - On **Create account → Join an academy**, with the demo academy's join codes. Click **Use** to fill the code.

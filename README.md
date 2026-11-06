@@ -2,7 +2,7 @@
 
 **AthleteIQ** is a web app for sports academies. Coaches track **practice attendance** and **match scores**, players follow their own progress, and scouts see only the players who are **ready**.
 
-🌐 **Live site:** _add your Vercel link here_
+🌐 **Live site:** athleteiq-elytra.vercel.app
 
 ---
 
@@ -51,6 +51,7 @@ Every academy's data is private. One academy can never see another academy's pla
 
 These are on purpose, to make judging easy:
 
+- **Bonus-feature popup.** When the app first opens, judges see a short note about the bonus feature: **many academies can use AthleteIQ privately**. It's shown once per browser, and only in evaluation mode.
 - **Yellow "For evaluation only" box.** It shows demo logins on *Sign in* and the demo academy's join codes on *Join an academy*, with **Use** buttons. It's switched on with `EVALUATION_MODE=true` and will be turned off after judging, when the codes become secret again.
 - **Demo accounts.** `coach@academy.test`, `scout@academy.test` and `player@academy.test` are made by `npm run seed` and all share one password.
 - **No emails are sent.** The coach passes login details to players directly.

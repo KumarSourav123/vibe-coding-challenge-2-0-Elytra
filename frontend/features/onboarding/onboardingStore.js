@@ -5,8 +5,10 @@ import { useSyncExternalStore } from "react";
 // Browser-only onboarding state.
 // - localStorage  "athleteiq:onboarding": { mode: "on" | "off", seen: [tourGroupId] }  (mode missing = not asked yet)
 // - sessionStorage "athleteiq:new-academy": name of an academy created in this tab, until its popup is dismissed
+// - localStorage  "athleteiq:bonus-notice": "seen" once the evaluator popup (multi-academy bonus) is dismissed
 const TOUR_KEY = "athleteiq:onboarding";
 const ACADEMY_KEY = "athleteiq:new-academy";
+const BONUS_KEY = "athleteiq:bonus-notice";
 
 const listeners = new Set();
 const emit = () => listeners.forEach((listener) => listener());
@@ -54,8 +56,9 @@ const saveTour = (tour) => write("localStorage", TOUR_KEY, JSON.stringify(tour))
 export function useOnboarding() {
   const tourRaw = useSyncExternalStore(subscribe, () => read("localStorage", TOUR_KEY) ?? "", () => undefined);
   const academyName = useSyncExternalStore(subscribe, () => read("sessionStorage", ACADEMY_KEY), () => undefined);
-  if (tourRaw === undefined) return { hydrated: false, mode: null, seen: [], academyName: null };
-  return { hydrated: true, ...parseTour(tourRaw), academyName };
+  const bonusSeen = useSyncExternalStore(subscribe, () => read("localStorage", BONUS_KEY) === "seen", () => false);
+  if (tourRaw === undefined) return { hydrated: false, mode: null, seen: [], academyName: null, bonusSeen: true };
+  return { hydrated: true, ...parseTour(tourRaw), academyName, bonusSeen };
 }
 
 export function setTourMode(mode) {
@@ -75,6 +78,10 @@ export function replayTourGroup(id) {
 
 export function markAcademyCreated(name) {
   write("sessionStorage", ACADEMY_KEY, name || "Your academy");
+}
+
+export function markBonusNoticeSeen() {
+  write("localStorage", BONUS_KEY, "seen");
 }
 
 export function clearAcademyCreated() {

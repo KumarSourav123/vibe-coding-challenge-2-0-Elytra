@@ -26,6 +26,7 @@ Update this file whenever a status changes. Last updated: 2026-11-06.
 | 13b | Evaluation mode (demo codes and logins shown to judges behind `EVALUATION_MODE`) | 7 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 13c | Branding (AthleteIQ) and guided tour (onboarding) | 7 | N/A | N/A | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 13d | Code-quality pass (shared helpers, stricter lint, docs refresh) | 7 | N/A | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 13e | Evaluator popup introducing the multi-academy bonus feature (evaluation mode only) | 7 | N/A | N/A | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 14 | Compulsory competition test cases (1–11) | 7 | N/A | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | TESTING (final check on Vercel in Phase 7) |
 | 15 | Production deployment (Vercel) | 7 | N/A | PENDING | PENDING | PENDING | PENDING | PENDING |
 

@@ -6,8 +6,11 @@ import Button from "@/frontend/components/ui/Button";
 import Icon from "@/frontend/components/ui/Icon";
 import { APP_NAME } from "@/frontend/utils/config";
 import { tourGroupFor } from "../data/tourSteps";
+import { getEvaluationInfo } from "@/frontend/features/evaluation/api/evaluationApi";
+import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import {
   clearAcademyCreated,
+  markBonusNoticeSeen,
   markTourGroupSeen,
   replayTourGroup,
   setTourMode,
@@ -66,6 +69,57 @@ function IntroDialog() {
     >
       <p>Would you like a guided walkthrough? We&apos;ll point out what to do, step by step, on each page as you use the site.</p>
       <p className="mt-2 text-xs text-slate-500">You can stop it any time, or replay it later from Tutorial in the menu.</p>
+    </Dialog>
+  );
+}
+
+const BONUS_POINTS = [
+  ["Any academy can sign up", "Create an academy in under a minute. Whoever creates it becomes its Head Coach."],
+  ["Every academy's data is private", "Players, sessions, matches and readiness are never visible to another academy."],
+  ["Invite with join codes", "The Head Coach shares a coach code and a scout code from the Academy page."],
+];
+
+/** Evaluators only (EVALUATION_MODE): introduces the multi-academy bonus feature, once per browser. */
+function BonusFeatureDialog() {
+  const router = useRouter();
+  const tryIt = () => {
+    markBonusNoticeSeen();
+    router.push("/register");
+  };
+  return (
+    <Dialog
+      icon="shield"
+      title="Bonus feature: multiple academies"
+      onClose={markBonusNoticeSeen}
+      actions={
+        <>
+          <Button variant="secondary" onClick={markBonusNoticeSeen}>
+            Got it
+          </Button>
+          <Button autoFocus iconRight="arrowRight" onClick={tryIt}>
+            Create your own academy
+          </Button>
+        </>
+      }
+    >
+      <p>
+        Beyond the brief, {APP_NAME} works for <strong>many academies at once</strong>. Each academy uses it
+        privately, as if it had its own copy of the app.
+      </p>
+      <ul className="mt-3 space-y-2.5">
+        {BONUS_POINTS.map(([title, detail]) => (
+          <li key={title} className="flex gap-2.5">
+            <Icon name="check" className="mt-0.5 shrink-0 text-brand-600" />
+            <span>
+              <span className="font-medium text-slate-900">{title}.</span> {detail}
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-slate-500">
+        Try it: create a second academy and check it sees nothing from the first. Or use the demo logins on
+        Sign in. This note is shown for evaluation only.
+      </p>
     </Dialog>
   );
 }
@@ -284,14 +338,18 @@ function TutorialButton({ groupId }) {
 
 /**
  * First-visit walkthrough and onboarding popups, mounted once in the root layout.
- * Order of priority: "academy created" message, then the tour opt-in prompt, then the current page's steps.
+ * Order of priority: "academy created" message, the evaluator bonus-feature note (evaluation mode only),
+ * the tour opt-in prompt, then the current page's steps. Only one popup is ever shown at a time.
  */
 export default function Onboarding() {
   const pathname = usePathname();
-  const { hydrated, mode, seen, academyName } = useOnboarding();
+  const { hydrated, mode, seen, academyName, bonusSeen } = useOnboarding();
+  // Returns 404 (ok: false) unless the server runs with EVALUATION_MODE=true.
+  const evaluation = useApiQuery("evaluation-mode", () => getEvaluationInfo());
   if (!hydrated) return null;
 
   if (academyName && pathname.startsWith("/coach")) return <AcademyCreatedDialog name={academyName} />;
+  if (!bonusSeen && evaluation.result?.ok) return <BonusFeatureDialog />;
   if (!mode) return <IntroDialog />;
 
   const group = tourGroupFor(pathname);

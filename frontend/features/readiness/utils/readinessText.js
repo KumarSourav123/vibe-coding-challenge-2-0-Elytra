@@ -3,6 +3,16 @@
  * "Readiness object"). The server decides isReady; this only explains it.
  */
 
+/**
+ * Whether the attendance requirement is met, using the same exact integer
+ * rule as the server (attended x 100 >= 75 x completed). attendancePercent is
+ * rounded for display, so never compare it directly.
+ */
+export function meetsAttendance(readiness) {
+  const { completedSessions, sessionsAttended, requirements } = readiness;
+  return completedSessions > 0 && sessionsAttended * 100 >= requirements.minAttendancePercent * completedSessions;
+}
+
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "es"}`;
 
 /** What still stands between the player and Ready. Empty when Ready. */
@@ -13,8 +23,7 @@ export function readinessGaps(readiness) {
 
   if (readiness.completedSessions === 0) {
     gaps.push("No completed practice sessions yet");
-  } else if (readiness.sessionsAttended * 100 < minAttendancePercent * readiness.completedSessions) {
-    // Same integer comparison as the server; attendancePercent is rounded for display.
+  } else if (!meetsAttendance(readiness)) {
     gaps.push(`Attendance ${readiness.attendancePercent}% (needs ${minAttendancePercent}%)`);
   }
 

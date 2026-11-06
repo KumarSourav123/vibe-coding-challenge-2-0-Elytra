@@ -14,11 +14,12 @@ import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import StatCard from "@/frontend/components/ui/StatCard";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { getCoachDashboard } from "../api/readinessApi";
-import { readinessSummary } from "../utils/readinessText";
+import { meetsAttendance, readinessSummary } from "../utils/readinessText";
 import ReadinessBadge from "./ReadinessBadge";
 import ReadinessMeter from "./ReadinessMeter";
 import { buildSportFilterOptions } from "@/frontend/utils/sport";
 import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
+import { MobileList, MobileListItem } from "@/frontend/components/ui/MobileList";
 
 const FILTERS = [
   { value: "all", label: "All" },
@@ -43,7 +44,7 @@ export default function CoachReadinessBoard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 gap-2.5 sm:gap-4">
         <StatCard label="Players" icon="users" value={summary ? summary.players : null} />
         <StatCard label="Ready" icon="checkCircle" value={summary ? summary.ready : null} hint="Visible to scouts (if active)" />
         <StatCard label="Not ready" icon="clock" value={summary ? summary.notReady : null} />
@@ -76,7 +77,38 @@ export default function CoachReadinessBoard() {
           />
         ) : (
           <>
-            <div className="overflow-x-auto">
+            {/* Phones: one tappable card per player. Tablets and up: the full table. */}
+            <MobileList>
+              {rows.map(({ player, readiness: r }) => (
+                <MobileListItem key={player.id} href={`/coach/players/${player.id}`} align="start" leading={<Avatar name={player.name} size="sm" />} chevron={false}>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium text-slate-900">{player.name}</p>
+                          <p className="text-xs text-slate-500">
+                            {player.sport}
+                            {!player.isActive && " · inactive"}
+                          </p>
+                        </div>
+                        <ReadinessBadge isReady={r.isReady} />
+                      </div>
+                      <div className="mt-2 flex items-center gap-3">
+                        <span className="w-10 shrink-0 font-medium text-slate-900 tabular-nums">{r.attendancePercent}%</span>
+                        <ReadinessMeter
+                          compact
+                          value={r.attendancePercent}
+                          max={100}
+                          target={r.requirements.minAttendancePercent}
+                          met={meetsAttendance(r)}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {r.sessionsAttended}/{r.completedSessions} sessions · {r.matchesPlayed}/{r.requirements.minMatchesPlayed} matches
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-500">{readinessSummary(r)}</p>
+                </MobileListItem>
+              ))}
+            </MobileList>
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50/60">
                   <tr>
@@ -114,7 +146,7 @@ export default function CoachReadinessBoard() {
                             value={r.attendancePercent}
                             max={100}
                             target={r.requirements.minAttendancePercent}
-                            met={r.completedSessions > 0 && r.sessionsAttended * 100 >= r.requirements.minAttendancePercent * r.completedSessions}
+                            met={meetsAttendance(r)}
                           />
                         </div>
                         <p className="mt-1 text-xs text-slate-500">

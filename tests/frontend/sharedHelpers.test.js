@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { isNotFoundResult } from "@/frontend/utils/apiClient";
+import { meetsAttendance } from "@/frontend/features/readiness/utils/readinessText";
 import { buildSportFilterOptions, COMMON_SPORTS } from "@/frontend/utils/sport";
 
 describe("buildSportFilterOptions", () => {
@@ -25,5 +26,21 @@ describe("isNotFoundResult", () => {
     expect(isNotFoundResult({ ok: false, code: "FORBIDDEN" })).toBe(false);
     expect(isNotFoundResult({ ok: true })).toBe(false);
     expect(isNotFoundResult(null)).toBe(false);
+  });
+});
+
+describe("meetsAttendance", () => {
+  const r = (attended, completed) => ({
+    sessionsAttended: attended,
+    completedSessions: completed,
+    requirements: { minAttendancePercent: 75, minMatchesPlayed: 2 },
+  });
+
+  it("uses the exact integer rule: 3/4 meets, 2/3 and 2999/3999 don't, 0/0 doesn't", () => {
+    expect(meetsAttendance(r(3, 4))).toBe(true);
+    expect(meetsAttendance(r(4, 4))).toBe(true);
+    expect(meetsAttendance(r(2, 3))).toBe(false);
+    expect(meetsAttendance(r(2999, 3999))).toBe(false);
+    expect(meetsAttendance(r(0, 0))).toBe(false);
   });
 });

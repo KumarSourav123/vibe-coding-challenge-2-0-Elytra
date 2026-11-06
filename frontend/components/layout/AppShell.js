@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Avatar from "@/frontend/components/ui/Avatar";
 import Icon from "@/frontend/components/ui/Icon";
 import Logo from "@/frontend/components/ui/Logo";
@@ -160,6 +160,27 @@ function SidebarContent({ onNavigate }) {
  */
 export default function AppShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Close the mobile menu after navigation (covers back/forward too).
+  const [lastPath, setLastPath] = useState(pathname);
+  if (pathname !== lastPath) {
+    setLastPath(pathname);
+    setMobileOpen(false);
+  }
+
+  // While the menu is open: Escape closes it and the page behind it doesn't scroll.
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (event) => event.key === "Escape" && setMobileOpen(false);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -188,7 +209,7 @@ export default function AppShell({ children }) {
             aria-label="Close menu"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-white shadow-raised">
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] overflow-y-auto overscroll-contain bg-white shadow-raised">
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
@@ -203,7 +224,7 @@ export default function AppShell({ children }) {
       )}
 
       <main className="lg:pl-64">
-        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-10 lg:py-10">{children}</div>
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8 lg:px-10 lg:py-10">{children}</div>
       </main>
     </div>
   );

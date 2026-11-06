@@ -17,6 +17,7 @@ import { attendanceLabel } from "../utils/attendanceLabel";
 import SessionStatusBadge from "./SessionStatusBadge";
 import { buildSportFilterOptions } from "@/frontend/utils/sport";
 import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
+import { MobileList, MobileListItem } from "@/frontend/components/ui/MobileList";
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
@@ -93,7 +94,22 @@ export default function SessionList() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: one tappable card per session. Tablets and up: the full table. */}
+          <MobileList>
+            {sessions.map((session) => (
+              <MobileListItem key={session.id} href={`/coach/sessions/${session.id}`}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-slate-900">{formatDayLabel(session.date)}</p>
+                      <SessionStatusBadge status={session.status} />
+                    </div>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {session.sport} · {attendanceLabel(session)}
+                    </p>
+                    <Progress session={session} />
+              </MobileListItem>
+            ))}
+          </MobileList>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[640px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>

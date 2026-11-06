@@ -38,6 +38,7 @@ frontend/
 | `Button` | Every button or button-style link (`variant`: primary, secondary, ghost, danger; `icon`) |
 | `Card` | Any panel. Use `title`, `description` and `action` for a header, and `padding={false}` for tables |
 | `Table` | `TH_CLASS` for header cells, `TableFooter` for the count and refresh spinner under a list |
+| `MobileList` / `MobileListItem` | The phone layout of a list: one tappable card per row (shown below `md`). Pair it with the table in `hidden md:block` |
 | `Input`, `Select`, `Switch`, `SegmentedControl`, `FormSection` | Forms, all the same height and style |
 | `Badge`, `Avatar`, `StatCard`, `Icon`, `Logo` | Labels, initials, numbers, icons, brand |
 | `Alert`, `EmptyState`, `ErrorState`, `NotFoundCard`, `Spinner` / `LoadingBlock` | Messages, plus the empty, error, not-found and loading states |
@@ -54,6 +55,7 @@ frontend/
    - `buildSportFilterOptions()` and `COMMON_SPORTS` (`utils/sport.js`)
    - `useCopyToClipboard()`
    - `formatDayLabel()` (`utils/date.js`)
+   - `meetsAttendance()` (`readiness/utils/readinessText.js`): never compare the rounded percentage yourself
 5. **Never import `backend/` or `lib/`** into frontend code. Only `NEXT_PUBLIC_*` settings are visible in the browser.
 6. **Keep pure helpers in files without JSX**, so tests can import them.
 7. **The UI only explains rules.** The server enforces them (e.g. the Ready rule, closed sessions).

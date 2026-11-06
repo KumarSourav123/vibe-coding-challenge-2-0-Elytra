@@ -173,6 +173,11 @@ function useTargetBox(selectors) {
 function cardPosition(box) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
+  // Phones: dock the card full-width at the edge farther from the highlighted element.
+  if (vw < 640) {
+    const centre = box.top + box.height / 2;
+    return centre > vh / 2 ? { left: 12, right: 12, top: 12 } : { left: 12, right: 12, bottom: 12 };
+  }
   const width = Math.min(CARD_WIDTH, vw - 32);
   const left = Math.min(Math.max(box.left, 16), vw - width - 16);
   const below = vh - (box.top + box.height) > 230 || box.top < 230;

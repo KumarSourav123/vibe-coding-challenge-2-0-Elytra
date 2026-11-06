@@ -14,13 +14,13 @@ export default function HomePage() {
           aria-hidden="true"
           className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgb(15_23_42/0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgb(15_23_42/0.04)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_top,black,transparent_70%)] bg-size-[48px_48px]"
         />
-        <Container className="grid items-center gap-14 py-20 sm:py-24 lg:grid-cols-2 lg:py-28">
+        <Container className="grid items-center gap-12 py-14 sm:gap-14 sm:py-24 lg:grid-cols-2 lg:py-28">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600 shadow-xs">
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
               Attendance · Matches · Readiness
             </span>
-            <h1 className="mt-6 text-4xl font-semibold tracking-tight text-balance text-slate-900 sm:text-5xl">
+            <h1 className="mt-6 text-[2rem] leading-tight font-semibold sm:text-4xl tracking-tight text-balance text-slate-900 sm:text-5xl">
               Run your sports academy from one place.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-pretty text-slate-500">

@@ -17,6 +17,7 @@ import { listPlayers } from "../api/playersApi";
 import PlayerStatusBadges from "./PlayerStatusBadges";
 import { buildSportFilterOptions } from "@/frontend/utils/sport";
 import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
+import { MobileList, MobileListItem } from "@/frontend/components/ui/MobileList";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
@@ -98,7 +99,21 @@ export default function PlayerList() {
         )
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: one tappable card per player. Tablets and up: the full table. */}
+          <MobileList>
+            {players.map((player) => (
+              <MobileListItem key={player.id} href={`/coach/players/${player.id}`} leading={<Avatar name={player.name} size="sm" />}>
+                    <p className="truncate font-medium text-slate-900">{player.name}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {player.sport} · {player.age} yrs
+                    </p>
+                    <div className="mt-1.5">
+                      <PlayerStatusBadges player={player} />
+                    </div>
+              </MobileListItem>
+            ))}
+          </MobileList>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>

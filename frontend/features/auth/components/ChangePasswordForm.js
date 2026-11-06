@@ -74,6 +74,7 @@ export default function ChangePasswordForm() {
         name="currentPassword"
         type="password"
         autoComplete="current-password"
+        placeholder={user?.mustChangePassword ? "Password your coach gave you" : "Enter your current password"}
         value={values.currentPassword}
         onChange={handleChange}
         error={fieldErrors.currentPassword}
@@ -84,6 +85,7 @@ export default function ChangePasswordForm() {
         name="newPassword"
         type="password"
         autoComplete="new-password"
+        placeholder="Min. 8 characters"
         hint="At least 8 characters. You'll be signed out on other devices."
         value={values.newPassword}
         onChange={handleChange}
@@ -95,6 +97,7 @@ export default function ChangePasswordForm() {
         name="confirmPassword"
         type="password"
         autoComplete="new-password"
+        placeholder="Re-enter the new password"
         value={values.confirmPassword}
         onChange={handleChange}
         error={fieldErrors.confirmPassword}

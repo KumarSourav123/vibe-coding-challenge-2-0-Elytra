@@ -174,6 +174,7 @@ function EditMatchForm({ match, onSaved, onCancel }) {
         <FormSection title="Match details" description="Date and sport can't change after a match is created.">
           <Input
             label="Opponent"
+            placeholder="e.g. City XI"
             value={opponent}
             onChange={(e) => {
               setOpponent(e.target.value);

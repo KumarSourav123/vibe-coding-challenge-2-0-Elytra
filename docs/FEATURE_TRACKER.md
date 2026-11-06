@@ -152,6 +152,20 @@ No behaviour changes. Duplication removed, then everything re-verified.
   - `npm run lint` clean, `npm test` 32 files / 283 tests passed, `npm run build` succeeded.
   - Live check: all 19 pages return 200 for the coach, scout, player and guest. The core flow (player → session → close → match) works, and the not-found and invalid-id paths are correct.
 
+## Merge review (2026-11-06)
+
+The merged branch brought **phone-friendly improvements**:
+- Lists show as cards on phones.
+- The mobile menu closes on navigation and on Escape, and locks page scroll while open.
+- Fields are 44px tall on phones, so iOS doesn't zoom in when one is tapped.
+- Placeholders and hints were added to forms.
+
+Integration work:
+- **Resolved the one conflict** (`CoachReadinessBoard.js`, with the team's approval): kept the shared `TableFooter` and moved the branch's `gap-3` spacing into `TableFooter`, so every table gets it.
+- **De-duplicated the new phone cards:** `MobileList` / `MobileListItem` (`components/ui/MobileList.js`) now serve the players, sessions, readiness and scout lists.
+- **One attendance rule on the frontend:** `meetsAttendance()` replaces three copies of the threshold check.
+- **Verified:** `npm run check` passes (lint clean, 32 files / 284 tests, build OK). Live check: all 17 pages return 200 for coach, scout, player and guest, and the readiness and scout data are correct.
+
 ## Surprise requirement (4 Nov, 11:00 IST)
 
 Record it here, then update the roadmap and affected contracts.

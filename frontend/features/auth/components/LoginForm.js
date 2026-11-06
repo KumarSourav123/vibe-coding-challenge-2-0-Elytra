@@ -80,7 +80,8 @@ export default function LoginForm() {
         name="email"
         type="email"
         autoComplete="email"
-        placeholder="you@academy.test"
+        placeholder="e.g. coach@academy.test"
+        hint="Demo logins end in @academy.test (coach@, scout@, player@). Accounts you sign up with can use any email."
         value={values.email}
         onChange={handleChange}
         error={fieldErrors.email}
@@ -93,6 +94,7 @@ export default function LoginForm() {
           name="password"
           type={showPassword ? "text" : "password"}
           autoComplete="current-password"
+          placeholder="Enter your password"
           value={values.password}
           onChange={handleChange}
           error={fieldErrors.password}

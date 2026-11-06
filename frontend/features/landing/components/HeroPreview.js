@@ -27,7 +27,7 @@ export default function HeroPreview() {
   return (
     <div className="relative isolate">
       <div aria-hidden="true" className="absolute -inset-6 -z-10 rounded-[2rem] bg-linear-to-br from-brand-50 via-white to-slate-100" />
-      <figure className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-raised">
+      <figure className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-raised sm:p-6">
         <div className="flex items-center gap-3">
           <Avatar name={SAMPLE.name} />
           <div className="flex-1">
@@ -42,7 +42,7 @@ export default function HeroPreview() {
           <Meter label="Attendance" value={SAMPLE.attendance} display={`${SAMPLE.attendance}%`} target={75} />
           <Meter label="Matches played" value={(SAMPLE.matches / 4) * 100} display={SAMPLE.matches} target={50} />
         </div>
-        <figcaption className="mt-6 flex items-center justify-between border-t border-slate-100 pt-4 text-xs text-slate-500">
+        <figcaption className="mt-6 flex items-center justify-between gap-3 border-t border-slate-100 pt-4 text-xs text-slate-500">
           <span>Thresholds: 75% attendance · 2 matches</span>
           <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-500">Example</span>
         </figcaption>

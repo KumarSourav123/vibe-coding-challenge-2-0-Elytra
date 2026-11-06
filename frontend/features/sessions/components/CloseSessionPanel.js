@@ -54,7 +54,7 @@ export default function CloseSessionPanel({ session, dirty, onClosed }) {
           <Alert tone="warning" title="This can't be undone">
             Attendance for this session will be locked. Make sure every player is marked correctly.
           </Alert>
-          <div className="flex justify-end gap-3">
+          <div className="flex flex-wrap justify-end gap-3">
             <Button variant="secondary" onClick={() => setConfirming(false)} disabled={closing}>
               Cancel
             </Button>

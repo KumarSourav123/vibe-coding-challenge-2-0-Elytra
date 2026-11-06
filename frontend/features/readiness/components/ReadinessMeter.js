@@ -1,4 +1,5 @@
 import { cn } from "@/frontend/utils/cn";
+import { meetsAttendance } from "../utils/readinessText";
 
 /**
  * Progress bar with a threshold marker.
@@ -48,10 +49,7 @@ export function ReadinessMeters({ readiness }) {
         value={readiness.attendancePercent}
         max={100}
         target={minAttendancePercent}
-        met={
-          readiness.completedSessions > 0 &&
-          readiness.sessionsAttended * 100 >= minAttendancePercent * readiness.completedSessions
-        }
+        met={meetsAttendance(readiness)}
       />
       <ReadinessMeter
         label="Matches played"

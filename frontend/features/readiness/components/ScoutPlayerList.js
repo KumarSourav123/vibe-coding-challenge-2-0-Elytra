@@ -15,6 +15,7 @@ import { listReadyPlayers } from "../api/readinessApi";
 import { formatScore } from "../utils/readinessText";
 import { buildSportFilterOptions } from "@/frontend/utils/sport";
 import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
+import { MobileList, MobileListItem } from "@/frontend/components/ui/MobileList";
 
 /** Ready players only - the server never sends anyone else to a scout. */
 export default function ScoutPlayerList() {
@@ -60,7 +61,31 @@ export default function ScoutPlayerList() {
         />
       ) : (
         <>
-          <div className="overflow-x-auto">
+          {/* Phones: one tappable card per player. Tablets and up: the full table. */}
+          <MobileList>
+            {rows.map(({ player, readiness, performance }) => (
+              <MobileListItem key={player.id} href={`/scout/players/${player.id}`} leading={<Avatar name={player.name} size="sm" />}>
+                    <p className="truncate font-medium text-slate-900">{player.name}</p>
+                    <p className="truncate text-xs text-slate-500">
+                      {player.sport} · {player.age} yrs
+                    </p>
+                    <dl className="mt-2 grid grid-cols-4 gap-2 text-xs">
+                      {[
+                        ["Attend.", `${readiness.attendancePercent}%`],
+                        ["Matches", readiness.matchesPlayed],
+                        ["Avg", formatScore(performance.averageScore)],
+                        ["Best", formatScore(performance.bestScore)],
+                      ].map(([label, value]) => (
+                        <div key={label} className="min-w-0">
+                          <dt className="truncate text-slate-500">{label}</dt>
+                          <dd className="font-semibold text-slate-900 tabular-nums">{value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+              </MobileListItem>
+            ))}
+          </MobileList>
+          <div className="hidden overflow-x-auto md:block">
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>

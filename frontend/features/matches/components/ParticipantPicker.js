@@ -121,7 +121,7 @@ export default function ParticipantPicker({ date, sport, selection, onChange, er
                 <input
                   type="checkbox"
                   aria-label={`Select ${player.name}`}
-                  className="h-4 w-4 rounded border-slate-300 accent-slate-900"
+                  className="h-5 w-5 shrink-0 rounded border-slate-300 accent-slate-900 sm:h-4 sm:w-4"
                   checked={selected}
                   onChange={() => toggle(player.id)}
                   disabled={disabled || (!player.eligible && !selected)}
@@ -142,12 +142,12 @@ export default function ParticipantPicker({ date, sport, selection, onChange, er
                   inputMode="decimal"
                   min={0}
                   step="any"
-                  placeholder="Score"
+                  placeholder="e.g. 45"
                   aria-label={`Score for ${player.name}`}
                   value={selected ? selection[player.id] : ""}
                   onChange={(e) => onChange({ ...selection, [player.id]: e.target.value })}
                   disabled={disabled || !selected}
-                  className={cn(FIELD_BASE, error ? FIELD_STATE.error : FIELD_STATE.normal, "w-28 text-right tabular-nums")}
+                  className={cn(FIELD_BASE, error ? FIELD_STATE.error : FIELD_STATE.normal, "w-24! shrink-0 text-right tabular-nums sm:w-28!")}
                 />
               </div>
               {error && <p className="mt-1.5 pl-[4.25rem] text-xs text-rose-600">{error}</p>}

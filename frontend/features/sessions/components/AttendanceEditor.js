@@ -28,7 +28,7 @@ function StatusToggle({ name, value, onChange, disabled }) {
             disabled={disabled}
             onClick={() => onChange(option.value)}
             className={cn(
-              "h-8 rounded-md px-3 text-sm font-medium ring-1 ring-inset transition-colors disabled:opacity-50",
+              "h-10 rounded-md px-3.5 text-sm font-medium ring-1 ring-inset transition-colors disabled:opacity-50 sm:h-8 sm:px-3",
               selected ? option.active : "bg-white text-slate-600 ring-slate-200 hover:bg-slate-50 hover:text-slate-900"
             )}
           >
@@ -134,7 +134,7 @@ export default function AttendanceEditor({ session, onSaved, onDirtyChange }) {
                   disabled={saving}
                 />
               ) : (
-                <span className="flex items-center gap-2">
+                <span className="flex flex-wrap items-center gap-2">
                   <Badge tone={entry.status === "PRESENT" ? "success" : "danger"}>
                     {entry.status === "PRESENT" ? "Present" : "Absent"}
                   </Badge>

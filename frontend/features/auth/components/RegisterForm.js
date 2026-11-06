@@ -137,10 +137,22 @@ export default function RegisterForm() {
         </div>
       )}
 
-      <Input label="Your full name" {...field("name", { autoComplete: "name" })} />
-      <Input label="Email" type="email" {...field("email", { autoComplete: "email" })} />
-      <Input label="Password" type="password" hint="At least 8 characters." {...field("password", { autoComplete: "new-password" })} />
-      <Input label="Confirm password" type="password" {...field("confirmPassword", { autoComplete: "new-password" })} />
+      <Input label="Your full name" placeholder="e.g. Rahul Sharma" {...field("name", { autoComplete: "name" })} />
+      <Input
+        label="Email"
+        type="email"
+        placeholder="e.g. rahul@gmail.com"
+        hint="Any valid email works. You'll sign in with it."
+        {...field("email", { autoComplete: "email" })}
+      />
+      <Input
+        label="Password"
+        type="password"
+        placeholder="Min. 8 characters"
+        hint="At least 8 characters."
+        {...field("password", { autoComplete: "new-password" })}
+      />
+      <Input label="Confirm password" type="password" placeholder="Re-enter your password" {...field("confirmPassword", { autoComplete: "new-password" })} />
 
       <Button type="submit" size="lg" className="w-full" disabled={submitting}>
         {submitting ? "Creating account..." : isCreate ? "Create academy" : "Join academy"}

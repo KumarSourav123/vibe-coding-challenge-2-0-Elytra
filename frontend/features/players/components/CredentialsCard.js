@@ -1,25 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Button from "@/frontend/components/ui/Button";
 import Icon from "@/frontend/components/ui/Icon";
+import { useCopyToClipboard } from "@/frontend/hooks/useCopyToClipboard";
+import { APP_NAME } from "@/frontend/utils/config";
 
 /**
  * Login details for the coach to pass to a player. The password is only
  * known on this screen; the server never returns it.
  */
 export default function CredentialsCard({ name, email, password, title }) {
-  const [copied, setCopied] = useState(false);
-  const text = `AthleteIQ login for ${name}\nEmail: ${email}\nTemporary password: ${password}\nYou will be asked to choose a new password when you first sign in.`;
-
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
+  const { copied, copy } = useCopyToClipboard();
+  const text = `${APP_NAME} login for ${name}\nEmail: ${email}\nTemporary password: ${password}\nYou will be asked to choose a new password when you first sign in.`;
 
   return (
     <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-5 sm:p-6">
@@ -46,7 +38,7 @@ export default function CredentialsCard({ name, email, password, title }) {
         </div>
       </dl>
 
-      <Button variant="secondary" size="sm" icon={copied ? "check" : "copy"} className="mt-4" onClick={handleCopy}>
+      <Button variant="secondary" size="sm" icon={copied ? "check" : "copy"} className="mt-4" onClick={() => copy(text)}>
         {copied ? "Copied" : "Copy details"}
       </Button>
     </div>

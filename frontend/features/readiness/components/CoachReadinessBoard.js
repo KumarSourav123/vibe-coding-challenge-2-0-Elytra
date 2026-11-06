@@ -10,22 +10,21 @@ import ErrorState from "@/frontend/components/ui/ErrorState";
 import Input from "@/frontend/components/ui/Input";
 import SegmentedControl from "@/frontend/components/ui/SegmentedControl";
 import Select from "@/frontend/components/ui/Select";
-import Spinner, { LoadingBlock } from "@/frontend/components/ui/Spinner";
+import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import StatCard from "@/frontend/components/ui/StatCard";
-import { COMMON_SPORTS } from "@/frontend/features/players/data/sports";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { getCoachDashboard } from "../api/readinessApi";
 import { readinessSummary } from "../utils/readinessText";
 import ReadinessBadge from "./ReadinessBadge";
 import ReadinessMeter from "./ReadinessMeter";
+import { buildSportFilterOptions } from "@/frontend/utils/sport";
+import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
 
 const FILTERS = [
   { value: "all", label: "All" },
   { value: "ready", label: "Ready" },
   { value: "not_ready", label: "Not ready" },
 ];
-
-const TH = "px-5 py-3 text-left text-xs font-medium text-slate-500";
 
 /** Every player's attendance, matches and readiness, computed live by the server. */
 export default function CoachReadinessBoard() {
@@ -40,12 +39,7 @@ export default function CoachReadinessBoard() {
   const summary = result?.ok ? result.data.summary : null;
   const term = search.trim().toLowerCase();
   const rows = result?.ok ? result.data.players.filter((row) => row.player.name.toLowerCase().includes(term)) : [];
-  const sportOptions = [
-    { value: "", label: "All sports" },
-    ...[...new Set([...COMMON_SPORTS, ...rows.map((r) => r.player.sport), ...(sport ? [sport] : [])])]
-      .sort()
-      .map((name) => ({ value: name, label: name })),
-  ];
+  const sportOptions = buildSportFilterOptions(rows.map((r) => r.player.sport), sport);
 
   return (
     <div className="space-y-6">
@@ -86,10 +80,10 @@ export default function CoachReadinessBoard() {
               <table className="w-full min-w-[760px] text-sm">
                 <thead className="border-b border-slate-100 bg-slate-50/60">
                   <tr>
-                    <th scope="col" className={TH}>Player</th>
-                    <th scope="col" className={TH}>Attendance</th>
-                    <th scope="col" className={TH}>Matches</th>
-                    <th scope="col" className={TH}>Readiness</th>
+                    <th scope="col" className={TH_CLASS}>Player</th>
+                    <th scope="col" className={TH_CLASS}>Attendance</th>
+                    <th scope="col" className={TH_CLASS}>Matches</th>
+                    <th scope="col" className={TH_CLASS}>Readiness</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -143,12 +137,9 @@ export default function CoachReadinessBoard() {
                 </tbody>
               </table>
             </div>
-            <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
-              <span>
-                {rows.length} player{rows.length === 1 ? "" : "s"} · Ready = attendance ≥ 75% and ≥ 2 matches
-              </span>
-              {loading && <Spinner label="Updating" className="h-3.5 w-3.5" />}
-            </div>
+            <TableFooter loading={loading}>
+              {rows.length} player{rows.length === 1 ? "" : "s"} · Ready = attendance ≥ 75% and ≥ 2 matches
+            </TableFooter>
           </>
         )}
       </Card>

@@ -7,7 +7,7 @@ Copy a template and replace `<…>` placeholders. Every template assumes the age
 ## 1. Master project instructions (start of every session)
 
 ```text
-You are working on the Sports Academy Management System: one Next.js App Router app in JavaScript
+You are working on AthleteIQ (a sports academy management system): one Next.js App Router app in JavaScript
 with Tailwind CSS v4, MongoDB Atlas + Mongoose, and Next.js Route Handlers as the backend.
 
 Read first: MASTER_DEVELOPMENT_PROMPT.md, docs/TEAM_DEVELOPMENT_GUIDE.md, docs/API_CONTRACTS.md,

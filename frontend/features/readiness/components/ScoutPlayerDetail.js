@@ -2,10 +2,9 @@
 
 import PageHeader from "@/frontend/components/layout/PageHeader";
 import Avatar from "@/frontend/components/ui/Avatar";
-import Button from "@/frontend/components/ui/Button";
-import Card from "@/frontend/components/ui/Card";
-import EmptyState from "@/frontend/components/ui/EmptyState";
 import ErrorState from "@/frontend/components/ui/ErrorState";
+import NotFoundCard from "@/frontend/components/ui/NotFoundCard";
+import { isNotFoundResult } from "@/frontend/utils/apiClient";
 import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { getReadyPlayer } from "../api/readinessApi";
@@ -31,19 +30,13 @@ export default function ScoutPlayerDetail({ playerId }) {
     return (
       <>
         <PageHeader title="Player" {...BACK} />
-        {result.code === "NOT_FOUND" || result.code === "INVALID_ID" ? (
-          <Card>
-            <EmptyState
-              icon="search"
-              title="Player not available"
-              description="This player isn't on the Ready list."
-              action={
-                <Button href="/scout" variant="secondary" size="sm">
-                  Back to Ready players
-                </Button>
-              }
-            />
-          </Card>
+        {isNotFoundResult(result) ? (
+          <NotFoundCard
+            title="Player not available"
+            description="This player isn't on the Ready list."
+            backHref="/scout"
+            backLabel="Back to Ready players"
+          />
         ) : (
           <ErrorState result={result} onRetry={reload} title="Could not load player" />
         )}

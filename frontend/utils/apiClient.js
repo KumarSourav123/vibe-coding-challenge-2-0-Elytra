@@ -28,6 +28,11 @@ export function normalizeApiResponse(status, body) {
   };
 }
 
+/** True when a result means "this record doesn't exist" (unknown, malformed or another academy's id). */
+export function isNotFoundResult(result) {
+  return result?.code === "NOT_FOUND" || result?.code === "INVALID_ID";
+}
+
 /** Build "/path?a=1" from a query object, skipping empty values. */
 export function buildUrl(path, query) {
   if (!query) return path;

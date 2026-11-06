@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
 import { Player, User } from "@/backend/models";
 import { duplicateEmail } from "@/backend/services/authService";
+import { findInAcademyOrThrow } from "@/backend/utils/academyScope";
 import { ROLES } from "@/backend/utils/constants";
 import { AppError } from "@/backend/utils/errors";
 import { hashPassword } from "@/backend/utils/password";
@@ -12,9 +12,6 @@ import { connectToDatabase } from "@/lib/mongodb";
  * coach manages every player; other academies' players look "not found".
  * Callers must already have checked the COACH role.
  */
-
-const notFound = () =>
-  new AppError("Player not found", 404, [{ code: "NOT_FOUND", message: "Player not found" }]);
 
 const noLoginAccount = () =>
   new AppError("This player has no login account", 409, [
@@ -37,15 +34,7 @@ export function toPlayerDTO(player, user) {
   };
 }
 
-async function findPlayerOrThrow(id, academyId) {
-  if (!mongoose.isValidObjectId(id)) {
-    throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid player id" }]);
-  }
-  await connectToDatabase();
-  const player = await Player.findOne({ _id: id, academy: academyId });
-  if (!player) throw notFound();
-  return player;
-}
+const findPlayerOrThrow = (id, academyId) => findInAcademyOrThrow(Player, id, academyId, "Player");
 
 /**
  * Create the profile and its PLAYER login. If the login cannot be saved

@@ -11,7 +11,7 @@ Set these in `.env.local` (on your computer) and in **Vercel → Project → Set
 | `SEED_PASSWORD` | Dev / evaluation | Password for the demo accounts made by `npm run seed` |
 | `EVALUATION_MODE` | Optional | `true` shows the demo logins and join codes to judges. Default `false` |
 | `EVALUATION_ACADEMY_NAME` | Optional | Academy whose codes are shown (default `Demo Academy`) |
-| `NEXT_PUBLIC_APP_NAME` / `NEXT_PUBLIC_APP_URL` | Optional | Display name and site address |
+| `NEXT_PUBLIC_APP_NAME` / `NEXT_PUBLIC_APP_URL` | Optional | Display name (default `AthleteIQ`) and site address |
 
 `MONGODB_URI` and `AUTH_SECRET` are never shown anywhere in the app, even in evaluation mode.
 
@@ -22,6 +22,7 @@ Set these in `.env.local` (on your computer) and in **Vercel → Project → Set
 | `npm run dev` | Run locally at http://localhost:3000 |
 | `npm run build` / `npm start` | Production build and run |
 | `npm test` / `npm run lint` | Automated tests and code checks |
+| `npm run check` | Lint, all tests and a production build, in one go (run before every deploy) |
 | `npm run seed` | Create the "Demo Academy" and the demo accounts (safe to re-run; skips existing ones) |
 | `npm run migrate:academy` | One-time: move data created before academies existed into a "Sports Academy" (safe to re-run) |
 

@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
 import { Match, Player, Session } from "@/backend/models";
 import { ATTENDANCE_STATUS, READINESS_RULES, SESSION_STATUS } from "@/backend/utils/constants";
 import { formatDateOnly } from "@/backend/utils/date";
+import { findInAcademyOrThrow, notFoundError } from "@/backend/utils/academyScope";
 import { AppError } from "@/backend/utils/errors";
 import { connectToDatabase } from "@/lib/mongodb";
 
@@ -159,20 +159,11 @@ function toDetailResponse({ profile, readiness, performance, attendance, matches
   return { profile, readiness, performance, attendance, matches };
 }
 
-const notFound = () => new AppError("Player not found", 404, [{ code: "NOT_FOUND", message: "Player not found" }]);
-
-async function findPlayer(id, academyId) {
-  if (!mongoose.isValidObjectId(id)) {
-    throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid player id" }]);
-  }
-  await connectToDatabase();
-  return Player.findOne({ _id: id, academy: academyId });
-}
+const findPlayerOrThrow = (id, academyId) => findInAcademyOrThrow(Player, id, academyId, "Player");
 
 /** Coach view of any player in the academy (§2.23). */
 export async function getPlayerPerformance(id, academyId) {
-  const player = await findPlayer(id, academyId);
-  if (!player) throw notFound();
+  const player = await findPlayerOrThrow(id, academyId);
   return toDetailResponse(await buildPerformanceDetail(player));
 }
 
@@ -193,9 +184,9 @@ export async function getOwnDashboard(user) {
  * exactly like an unknown id, so scouts can't learn they exist.
  */
 export async function getReadyPlayerForScout(id, academyId) {
-  const player = await findPlayer(id, academyId);
-  if (!player || !player.isActive) throw notFound();
+  const player = await findPlayerOrThrow(id, academyId);
+  if (!player.isActive) throw notFoundError("Player");
   const detail = await buildPerformanceDetail(player);
-  if (!detail.readiness.isReady) throw notFound();
+  if (!detail.readiness.isReady) throw notFoundError("Player");
   return toDetailResponse(detail);
 }

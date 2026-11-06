@@ -7,8 +7,9 @@ import Avatar from "@/frontend/components/ui/Avatar";
 import Badge from "@/frontend/components/ui/Badge";
 import Button from "@/frontend/components/ui/Button";
 import Card from "@/frontend/components/ui/Card";
-import EmptyState from "@/frontend/components/ui/EmptyState";
 import ErrorState from "@/frontend/components/ui/ErrorState";
+import NotFoundCard from "@/frontend/components/ui/NotFoundCard";
+import { isNotFoundResult } from "@/frontend/utils/apiClient";
 import FormSection, { FormActions } from "@/frontend/components/ui/FormSection";
 import Input from "@/frontend/components/ui/Input";
 import Icon from "@/frontend/components/ui/Icon";
@@ -228,19 +229,13 @@ export default function MatchDetails({ matchId }) {
     return (
       <>
         <PageHeader title="Match" {...BACK} />
-        {result.code === "NOT_FOUND" || result.code === "INVALID_ID" ? (
-          <Card>
-            <EmptyState
-              icon="search"
-              title="Match not found"
-              description="This match doesn't exist or the link is wrong."
-              action={
-                <Button href="/coach/matches" variant="secondary" size="sm">
-                  Back to matches
-                </Button>
-              }
-            />
-          </Card>
+        {isNotFoundResult(result) ? (
+          <NotFoundCard
+            title="Match not found"
+            description="This match doesn't exist or the link is wrong."
+            backHref="/coach/matches"
+            backLabel="Back to matches"
+          />
         ) : (
           <ErrorState result={result} onRetry={reload} title="Could not load match" />
         )}

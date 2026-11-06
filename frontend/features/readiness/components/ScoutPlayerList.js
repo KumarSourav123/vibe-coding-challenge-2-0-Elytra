@@ -9,13 +9,12 @@ import ErrorState from "@/frontend/components/ui/ErrorState";
 import Icon from "@/frontend/components/ui/Icon";
 import Input from "@/frontend/components/ui/Input";
 import Select from "@/frontend/components/ui/Select";
-import Spinner, { LoadingBlock } from "@/frontend/components/ui/Spinner";
-import { COMMON_SPORTS } from "@/frontend/features/players/data/sports";
+import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { listReadyPlayers } from "../api/readinessApi";
 import { formatScore } from "../utils/readinessText";
-
-const TH = "px-5 py-3 text-left text-xs font-medium text-slate-500";
+import { buildSportFilterOptions } from "@/frontend/utils/sport";
+import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
 
 /** Ready players only - the server never sends anyone else to a scout. */
 export default function ScoutPlayerList() {
@@ -28,12 +27,7 @@ export default function ScoutPlayerList() {
   const term = search.trim().toLowerCase();
   const all = result?.ok ? result.data.players : [];
   const rows = all.filter((row) => row.player.name.toLowerCase().includes(term));
-  const sportOptions = [
-    { value: "", label: "All sports" },
-    ...[...new Set([...COMMON_SPORTS, ...all.map((r) => r.player.sport), ...(sport ? [sport] : [])])]
-      .sort()
-      .map((name) => ({ value: name, label: name })),
-  ];
+  const sportOptions = buildSportFilterOptions(all.map((r) => r.player.sport), sport);
 
   return (
     <Card padding={false}>
@@ -70,11 +64,11 @@ export default function ScoutPlayerList() {
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>
-                  <th scope="col" className={TH}>Player</th>
-                  <th scope="col" className={TH}>Attendance</th>
-                  <th scope="col" className={TH}>Matches</th>
-                  <th scope="col" className={TH}>Average</th>
-                  <th scope="col" className={TH}>Best</th>
+                  <th scope="col" className={TH_CLASS}>Player</th>
+                  <th scope="col" className={TH_CLASS}>Attendance</th>
+                  <th scope="col" className={TH_CLASS}>Matches</th>
+                  <th scope="col" className={TH_CLASS}>Average</th>
+                  <th scope="col" className={TH_CLASS}>Best</th>
                   <th scope="col" className="w-10 px-5 py-3"><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
@@ -109,12 +103,9 @@ export default function ScoutPlayerList() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
-            <span>
-              {rows.length} Ready player{rows.length === 1 ? "" : "s"}
-            </span>
-            {loading && <Spinner label="Updating" className="h-3.5 w-3.5" />}
-          </div>
+          <TableFooter loading={loading}>
+            {rows.length} Ready player{rows.length === 1 ? "" : "s"}
+          </TableFooter>
         </>
       )}
     </Card>

@@ -1,25 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Icon from "@/frontend/components/ui/Icon";
 import { ROLE_LABELS } from "@/frontend/features/auth/data/roleLabels";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
+import { useCopyToClipboard } from "@/frontend/hooks/useCopyToClipboard";
 import { getEvaluationInfo } from "../api/evaluationApi";
 
 function CopyButton({ value }) {
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   return (
     <button
       type="button"
-      onClick={async () => {
-        try {
-          await navigator.clipboard.writeText(value);
-          setCopied(true);
-          setTimeout(() => setCopied(false), 1500);
-        } catch {
-          setCopied(false);
-        }
-      }}
+      onClick={() => copy(value)}
       className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-xs font-medium text-amber-900 hover:bg-amber-100"
     >
       <Icon name={copied ? "check" : "copy"} className="h-3.5 w-3.5" />

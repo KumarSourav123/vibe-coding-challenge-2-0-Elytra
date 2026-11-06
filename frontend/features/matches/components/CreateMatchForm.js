@@ -7,11 +7,11 @@ import Button from "@/frontend/components/ui/Button";
 import Card from "@/frontend/components/ui/Card";
 import FormSection, { FormActions } from "@/frontend/components/ui/FormSection";
 import Input from "@/frontend/components/ui/Input";
-import { COMMON_SPORTS } from "@/frontend/features/players/data/sports";
 import { todayDateOnly } from "@/frontend/utils/date";
 import { createMatch } from "../api/matchesApi";
 import { buildParticipants, participantErrorsFrom } from "../utils/participants";
 import ParticipantPicker from "./ParticipantPicker";
+import { COMMON_SPORTS } from "@/frontend/utils/sport";
 
 const SPORTS_LIST_ID = "match-sport-options";
 

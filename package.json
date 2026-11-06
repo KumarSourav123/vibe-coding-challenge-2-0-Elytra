@@ -1,8 +1,8 @@
 {
-  "name": "sports-academy",
+  "name": "athleteiq",
   "version": "0.1.0",
   "private": true,
-  "description": "Sports Academy Management System - one integrated Next.js application",
+  "description": "AthleteIQ - sports academy management: players, practice attendance, matches and scouting readiness, with private multi-academy support.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "check": "npm run lint && npm test && npm run build",
     "seed": "node --env-file=.env.local --import ./scripts/register-alias.mjs scripts/seed.mjs",
     "migrate:academy": "node --env-file=.env.local --import ./scripts/register-alias.mjs scripts/migrate-academy.mjs"
   },

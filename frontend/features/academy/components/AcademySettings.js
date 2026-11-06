@@ -12,6 +12,7 @@ import Input from "@/frontend/components/ui/Input";
 import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useAuth } from "@/frontend/features/auth/context/AuthProvider";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
+import { useCopyToClipboard } from "@/frontend/hooks/useCopyToClipboard";
 import { getAcademy, regenerateJoinCode, renameAcademy } from "../api/academyApi";
 
 const CODE_INFO = {
@@ -21,19 +22,10 @@ const CODE_INFO = {
 
 function JoinCodeCard({ role, code, onRegenerated }) {
   const info = CODE_INFO[role];
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(code);
-      setCopied(true);
-    } catch {
-      setCopied(false);
-    }
-  }
 
   async function regenerate() {
     setBusy(true);
@@ -42,7 +34,6 @@ function JoinCodeCard({ role, code, onRegenerated }) {
     setBusy(false);
     setConfirming(false);
     if (result.ok) {
-      setCopied(false);
       onRegenerated(result.data);
     } else {
       setError(result.message);
@@ -60,7 +51,7 @@ function JoinCodeCard({ role, code, onRegenerated }) {
         <code className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 font-mono text-lg tracking-widest text-slate-900">
           {code}
         </code>
-        <Button variant="secondary" size="sm" icon={copied ? "check" : "copy"} onClick={copy}>
+        <Button variant="secondary" size="sm" icon={copied ? "check" : "copy"} onClick={() => copy(code)}>
           {copied ? "Copied" : "Copy"}
         </Button>
       </div>

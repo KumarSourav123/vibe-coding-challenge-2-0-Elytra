@@ -6,8 +6,9 @@ import Alert from "@/frontend/components/ui/Alert";
 import Avatar from "@/frontend/components/ui/Avatar";
 import Button from "@/frontend/components/ui/Button";
 import Card from "@/frontend/components/ui/Card";
-import EmptyState from "@/frontend/components/ui/EmptyState";
 import ErrorState from "@/frontend/components/ui/ErrorState";
+import NotFoundCard from "@/frontend/components/ui/NotFoundCard";
+import { isNotFoundResult } from "@/frontend/utils/apiClient";
 import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { getPlayer, updatePlayer } from "../api/playersApi";
@@ -46,19 +47,13 @@ export default function PlayerDetails({ playerId }) {
     return (
       <>
         <PageHeader title="Player" {...BACK} />
-        {result.code === "NOT_FOUND" || result.code === "INVALID_ID" ? (
-          <Card>
-            <EmptyState
-              icon="search"
-              title="Player not found"
-              description="This player doesn't exist or the link is wrong."
-              action={
-                <Button href="/coach/players" variant="secondary" size="sm">
-                  Back to players
-                </Button>
-              }
-            />
-          </Card>
+        {isNotFoundResult(result) ? (
+          <NotFoundCard
+            title="Player not found"
+            description="This player doesn't exist or the link is wrong."
+            backHref="/coach/players"
+            backLabel="Back to players"
+          />
         ) : (
           <ErrorState result={result} onRetry={reload} title="Could not load player" />
         )}

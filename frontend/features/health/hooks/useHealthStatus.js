@@ -12,27 +12,32 @@ export function useHealthStatus() {
   const [result, setResult] = useState(null);
   const controllerRef = useRef(null);
 
-  const check = useCallback(async () => {
+  /** Start a check, cancelling any check still in flight. State updates only after it resolves. */
+  const run = useCallback(() => {
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    setState("loading");
-    try {
-      const health = await fetchHealth({ signal: controller.signal });
-      setResult(health);
-      setState(health.status);
-    } catch (error) {
-      if (error?.name !== "AbortError") throw error;
-    }
+    fetchHealth({ signal: controller.signal }).then(
+      (health) => {
+        setResult(health);
+        setState(health.status);
+      },
+      (error) => {
+        if (error?.name !== "AbortError") throw error;
+      }
+    );
   }, []);
 
   useEffect(() => {
-    // Initial check on mount; the state updates happen after the fetch resolves.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    check();
+    run();
     return () => controllerRef.current?.abort();
-  }, [check]);
+  }, [run]);
 
-  return { state, result, refresh: check };
+  const refresh = useCallback(() => {
+    setState("loading");
+    run();
+  }, [run]);
+
+  return { state, result, refresh };
 }

@@ -8,11 +8,12 @@ import EmptyState from "@/frontend/components/ui/EmptyState";
 import ErrorState from "@/frontend/components/ui/ErrorState";
 import Icon from "@/frontend/components/ui/Icon";
 import Select from "@/frontend/components/ui/Select";
-import Spinner, { LoadingBlock } from "@/frontend/components/ui/Spinner";
-import { COMMON_SPORTS } from "@/frontend/features/players/data/sports";
+import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { formatDayLabel } from "@/frontend/utils/date";
 import { listMatches } from "../api/matchesApi";
+import { buildSportFilterOptions } from "@/frontend/utils/sport";
+import { TableFooter } from "@/frontend/components/ui/Table";
 
 /** "2026-11-02" -> { weekday: "Mon", day: 2, month: "Nov" } (UTC, like formatDayLabel). */
 function dateParts(dateOnly) {
@@ -75,12 +76,7 @@ export default function MatchList() {
   const { loading, result, reload } = useApiQuery(`matches:${sport}`, () => listMatches({ sport }));
 
   const matches = result?.ok ? result.data.matches : [];
-  const sportOptions = [
-    { value: "", label: "All sports" },
-    ...[...new Set([...COMMON_SPORTS, ...matches.map((m) => m.sport), ...(sport ? [sport] : [])])]
-      .sort()
-      .map((name) => ({ value: name, label: name })),
-  ];
+  const sportOptions = buildSportFilterOptions(matches.map((m) => m.sport), sport);
 
   return (
     <Card padding={false}>
@@ -128,12 +124,9 @@ export default function MatchList() {
               </li>
             ))}
           </ul>
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
-            <span>
-              {result.data.count} match{result.data.count === 1 ? "" : "es"}
-            </span>
-            {loading && <Spinner label="Updating" className="h-3.5 w-3.5" />}
-          </div>
+          <TableFooter loading={loading}>
+            {result.data.count} match{result.data.count === 1 ? "" : "es"}
+          </TableFooter>
         </>
       )}
     </Card>

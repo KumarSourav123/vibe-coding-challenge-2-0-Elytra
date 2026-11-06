@@ -6,8 +6,8 @@ import Button from "@/frontend/components/ui/Button";
 import FormSection, { FormActions } from "@/frontend/components/ui/FormSection";
 import Input from "@/frontend/components/ui/Input";
 import Switch from "@/frontend/components/ui/Switch";
-import { COMMON_SPORTS } from "../data/sports";
 import { generateTemporaryPassword } from "../utils/generatePassword";
+import { COMMON_SPORTS } from "@/frontend/utils/sport";
 
 const SPORTS_LIST_ID = "player-sport-options";
 

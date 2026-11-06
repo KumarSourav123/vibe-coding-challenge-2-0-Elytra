@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
 import { Player, Session } from "@/backend/models";
 import { ATTENDANCE_STATUS, SESSION_STATUS } from "@/backend/utils/constants";
 import { formatDateOnly } from "@/backend/utils/date";
+import { conflictError, findInAcademyOrThrow, notFoundError } from "@/backend/utils/academyScope";
 import { AppError } from "@/backend/utils/errors";
 import { connectToDatabase } from "@/lib/mongodb";
 
@@ -14,17 +14,9 @@ import { connectToDatabase } from "@/lib/mongodb";
  * can never be modified, even by a request that raced the close.
  */
 
-const notFound = () =>
-  new AppError("Session not found", 404, [{ code: "NOT_FOUND", message: "Session not found" }]);
-
 const sessionClosed = () =>
   new AppError("This session is closed and can no longer be changed", 409, [
     { code: "SESSION_CLOSED", message: "This session is closed and can no longer be changed" },
-  ]);
-
-const conflict = () =>
-  new AppError("The session was changed by another request. Reload and try again", 409, [
-    { code: "CONFLICT", message: "The session was changed by another request. Reload and try again" },
   ]);
 
 /** Active players of the academy whose sport matches - the session's eligible roster (Q1). */
@@ -32,15 +24,7 @@ export function findEligiblePlayers(sport, academyId) {
   return Player.find({ academy: academyId, sport, isActive: true }).sort({ name: 1, _id: 1 });
 }
 
-async function findSessionOrThrow(id, academyId) {
-  if (!mongoose.isValidObjectId(id)) {
-    throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid session id" }]);
-  }
-  await connectToDatabase();
-  const session = await Session.findOne({ _id: id, academy: academyId });
-  if (!session) throw notFound();
-  return session;
-}
+const findSessionOrThrow = (id, academyId) => findInAcademyOrThrow(Session, id, academyId, "Session");
 
 /**
  * Apply a compare-and-set update to an OPEN session at a known version.
@@ -55,8 +39,8 @@ async function updateOpenSession(session, update) {
   if (updated) return updated;
 
   const current = await Session.findById(session._id).select("status");
-  if (!current) throw notFound();
-  throw current.status === SESSION_STATUS.CLOSED ? sessionClosed() : conflict();
+  if (!current) throw notFoundError("Session");
+  throw current.status === SESSION_STATUS.CLOSED ? sessionClosed() : conflictError("Session");
 }
 
 /**

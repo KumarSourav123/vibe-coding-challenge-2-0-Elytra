@@ -8,10 +8,9 @@ import Card from "@/frontend/components/ui/Card";
 import FormSection, { FormActions } from "@/frontend/components/ui/FormSection";
 import Input from "@/frontend/components/ui/Input";
 import { listPlayers } from "@/frontend/features/players/api/playersApi";
-import { COMMON_SPORTS } from "@/frontend/features/players/data/sports";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { todayDateOnly } from "@/frontend/utils/date";
-import { normalizeSport } from "@/frontend/utils/sport";
+import { COMMON_SPORTS, normalizeSport } from "@/frontend/utils/sport";
 import { createSession } from "../api/sessionsApi";
 
 const SPORTS_LIST_ID = "session-sport-options";

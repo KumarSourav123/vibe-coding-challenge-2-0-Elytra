@@ -9,21 +9,20 @@ import ErrorState from "@/frontend/components/ui/ErrorState";
 import Icon from "@/frontend/components/ui/Icon";
 import SegmentedControl from "@/frontend/components/ui/SegmentedControl";
 import Select from "@/frontend/components/ui/Select";
-import Spinner, { LoadingBlock } from "@/frontend/components/ui/Spinner";
-import { COMMON_SPORTS } from "@/frontend/features/players/data/sports";
+import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { formatDayLabel } from "@/frontend/utils/date";
 import { listSessions } from "../api/sessionsApi";
 import { attendanceLabel } from "../utils/attendanceLabel";
 import SessionStatusBadge from "./SessionStatusBadge";
+import { buildSportFilterOptions } from "@/frontend/utils/sport";
+import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
 
 const STATUS_TABS = [
   { value: "all", label: "All" },
   { value: "open", label: "Open" },
   { value: "closed", label: "Closed" },
 ];
-
-const TH = "px-5 py-3 text-left text-xs font-medium text-slate-500";
 
 function Progress({ session }) {
   const { eligible, unmarked } = session.summary;
@@ -45,12 +44,7 @@ export default function SessionList() {
 
   const sessions = result?.ok ? result.data.sessions : [];
   const hasFilters = status !== "all" || Boolean(sport);
-  const sportOptions = [
-    { value: "", label: "All sports" },
-    ...[...new Set([...COMMON_SPORTS, ...sessions.map((s) => s.sport), ...(sport ? [sport] : [])])]
-      .sort()
-      .map((name) => ({ value: name, label: name })),
-  ];
+  const sportOptions = buildSportFilterOptions(sessions.map((s) => s.sport), sport);
 
   return (
     <Card padding={false}>
@@ -103,10 +97,10 @@ export default function SessionList() {
             <table className="w-full min-w-[640px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>
-                  <th scope="col" className={TH}>Date</th>
-                  <th scope="col" className={TH}>Sport</th>
-                  <th scope="col" className={TH}>Status</th>
-                  <th scope="col" className={TH}>Attendance</th>
+                  <th scope="col" className={TH_CLASS}>Date</th>
+                  <th scope="col" className={TH_CLASS}>Sport</th>
+                  <th scope="col" className={TH_CLASS}>Status</th>
+                  <th scope="col" className={TH_CLASS}>Attendance</th>
                   <th scope="col" className="w-10 px-5 py-3"><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
@@ -137,12 +131,9 @@ export default function SessionList() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
-            <span>
-              {result.data.count} session{result.data.count === 1 ? "" : "s"}
-            </span>
-            {loading && <Spinner label="Updating" className="h-3.5 w-3.5" />}
-          </div>
+          <TableFooter loading={loading}>
+            {result.data.count} session{result.data.count === 1 ? "" : "s"}
+          </TableFooter>
         </>
       )}
     </Card>

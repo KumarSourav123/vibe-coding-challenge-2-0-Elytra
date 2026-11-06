@@ -10,20 +10,19 @@ import ErrorState from "@/frontend/components/ui/ErrorState";
 import Icon from "@/frontend/components/ui/Icon";
 import Input from "@/frontend/components/ui/Input";
 import Select from "@/frontend/components/ui/Select";
-import Spinner, { LoadingBlock } from "@/frontend/components/ui/Spinner";
+import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import { useApiQuery } from "@/frontend/hooks/useApiQuery";
 import { useDebouncedValue } from "@/frontend/hooks/useDebouncedValue";
 import { listPlayers } from "../api/playersApi";
-import { COMMON_SPORTS } from "../data/sports";
 import PlayerStatusBadges from "./PlayerStatusBadges";
+import { buildSportFilterOptions } from "@/frontend/utils/sport";
+import { TH_CLASS, TableFooter } from "@/frontend/components/ui/Table";
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All statuses" },
   { value: "active", label: "Active" },
   { value: "inactive", label: "Inactive" },
 ];
-
-const TH = "px-5 py-3 text-left text-xs font-medium text-slate-500";
 
 /** Academy player list with search, sport and status filters. */
 export default function PlayerList() {
@@ -39,12 +38,7 @@ export default function PlayerList() {
   const hasFilters = Boolean(debouncedSearch || sport || status !== "all");
 
   // Offer common sports plus any sport already used by a listed player.
-  const sportOptions = [
-    { value: "", label: "All sports" },
-    ...[...new Set([...COMMON_SPORTS, ...players.map((p) => p.sport), ...(sport ? [sport] : [])])]
-      .sort()
-      .map((name) => ({ value: name, label: name })),
-  ];
+  const sportOptions = buildSportFilterOptions(players.map((p) => p.sport), sport);
 
   function clearFilters() {
     setSearch("");
@@ -108,10 +102,10 @@ export default function PlayerList() {
             <table className="w-full min-w-[680px] text-sm">
               <thead className="border-b border-slate-100 bg-slate-50/60">
                 <tr>
-                  <th scope="col" className={TH}>Player</th>
-                  <th scope="col" className={TH}>Sport</th>
-                  <th scope="col" className={TH}>Age</th>
-                  <th scope="col" className={TH}>Status</th>
+                  <th scope="col" className={TH_CLASS}>Player</th>
+                  <th scope="col" className={TH_CLASS}>Sport</th>
+                  <th scope="col" className={TH_CLASS}>Age</th>
+                  <th scope="col" className={TH_CLASS}>Status</th>
                   <th scope="col" className="w-10 px-5 py-3"><span className="sr-only">Open</span></th>
                 </tr>
               </thead>
@@ -146,13 +140,10 @@ export default function PlayerList() {
               </tbody>
             </table>
           </div>
-          <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 text-xs text-slate-500">
-            <span>
-              {result.data.count} player{result.data.count === 1 ? "" : "s"}
-              {hasFilters && " matching filters"}
-            </span>
-            {loading && <Spinner label="Updating" className="h-3.5 w-3.5" />}
-          </div>
+          <TableFooter loading={loading}>
+            {result.data.count} player{result.data.count === 1 ? "" : "s"}
+            {hasFilters && " matching filters"}
+          </TableFooter>
         </>
       )}
     </Card>

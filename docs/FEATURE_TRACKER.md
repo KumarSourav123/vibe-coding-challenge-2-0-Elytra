@@ -2,7 +2,7 @@
 
 Statuses: `PENDING` · `IN PROGRESS` · `TESTING` · `READY FOR INTEGRATION` · `INTEGRATED` · `COMPLETE`
 
-Update this file whenever a status changes. Last updated: 2026-11-02.
+Update this file whenever a status changes. Last updated: 2026-11-06.
 
 | # | Feature | Phase | API contract | Backend | Frontend | Independent testing | Integration | Final |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -24,6 +24,8 @@ Update this file whenever a status changes. Last updated: 2026-11-02.
 | 13 | Scout dashboard (Ready only) | 6 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 13a | Multi-academy (create / join with codes, isolation, migration) | 6+ | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 13b | Evaluation mode (demo codes and logins shown to judges behind `EVALUATION_MODE`) | 7 | IMPLEMENTED | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 13c | Branding (AthleteIQ) and guided tour (onboarding) | 7 | N/A | N/A | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
+| 13d | Code-quality pass (shared helpers, stricter lint, docs refresh) | 7 | N/A | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | COMPLETE |
 | 14 | Compulsory competition test cases (1–11) | 7 | N/A | COMPLETE | COMPLETE | COMPLETE | INTEGRATED | TESTING (final check on Vercel in Phase 7) |
 | 15 | Production deployment (Vercel) | 7 | N/A | PENDING | PENDING | PENDING | PENDING | PENDING |
 
@@ -132,6 +134,23 @@ Decisions (team): anyone can create an academy (becoming its Head Coach). Coache
   - Beta's coach: 0 players, and the migrated player's id → `NOT_FOUND`.
   - `npm run seed` creates a "Demo Academy" with codes.
 - Removed the `COACH_SIGNUP_CODE` / `SCOUT_SIGNUP_CODE` env vars (replaced by per-academy join codes).
+
+## Code-quality pass (2026-11-06)
+
+No behaviour changes. Duplication removed, then everything re-verified.
+
+- **Backend:** one shared `backend/utils/academyScope.js` (`findInAcademyOrThrow`, `assertValidId`, `notFoundError`, `conflictError`) replaces four copies in the player, session, match and readiness services.
+- **Frontend:**
+  - Shared `buildSportFilterOptions` / `COMMON_SPORTS` (`utils/sport.js`) replaces five copies.
+  - `components/ui/Table.js` (`TH_CLASS`, `TableFooter`) replaces five copies.
+  - `useCopyToClipboard` replaces three, and `NotFoundCard` + `isNotFoundResult` replaces four.
+  - The last `eslint-disable` was removed (health hook).
+- **Lint:** `no-unused-vars`, `eqeqeq`, `prefer-const` and `no-var` are now errors, and the code is clean under them.
+- **Project:** package renamed to `athleteiq`, `npm run check` added, and the onboarding storage keys renamed to `athleteiq:*`.
+- **Docs:** new `docs/README.md` (guide) and `docs/ARCHITECTURE.md`. `BACKEND.md`, `FRONTEND.md` and `README.md` rewritten for the final app.
+- **Verification:**
+  - `npm run lint` clean, `npm test` 32 files / 283 tests passed, `npm run build` succeeded.
+  - Live check: all 19 pages return 200 for the coach, scout, player and guest. The core flow (player → session → close → match) works, and the not-found and invalid-id paths are correct.
 
 ## Surprise requirement (4 Nov, 11:00 IST)
 

@@ -3,10 +3,10 @@
 import { useSyncExternalStore } from "react";
 
 // Browser-only onboarding state.
-// - localStorage  "matchfit:onboarding": { mode: "on" | "off", seen: [tourGroupId] }  (mode missing = not asked yet)
-// - sessionStorage "matchfit:new-academy": name of an academy created in this tab, until its popup is dismissed
-const TOUR_KEY = "matchfit:onboarding";
-const ACADEMY_KEY = "matchfit:new-academy";
+// - localStorage  "athleteiq:onboarding": { mode: "on" | "off", seen: [tourGroupId] }  (mode missing = not asked yet)
+// - sessionStorage "athleteiq:new-academy": name of an academy created in this tab, until its popup is dismissed
+const TOUR_KEY = "athleteiq:onboarding";
+const ACADEMY_KEY = "athleteiq:new-academy";
 
 const listeners = new Set();
 const emit = () => listeners.forEach((listener) => listener());

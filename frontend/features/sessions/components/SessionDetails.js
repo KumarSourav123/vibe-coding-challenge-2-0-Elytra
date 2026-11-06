@@ -9,6 +9,8 @@ import Button from "@/frontend/components/ui/Button";
 import Card from "@/frontend/components/ui/Card";
 import EmptyState from "@/frontend/components/ui/EmptyState";
 import ErrorState from "@/frontend/components/ui/ErrorState";
+import NotFoundCard from "@/frontend/components/ui/NotFoundCard";
+import { isNotFoundResult } from "@/frontend/utils/apiClient";
 import Icon from "@/frontend/components/ui/Icon";
 import { LoadingBlock } from "@/frontend/components/ui/Spinner";
 import StatCard from "@/frontend/components/ui/StatCard";
@@ -63,19 +65,13 @@ export default function SessionDetails({ sessionId }) {
     return (
       <>
         <PageHeader title="Session" {...BACK} />
-        {result.code === "NOT_FOUND" || result.code === "INVALID_ID" ? (
-          <Card>
-            <EmptyState
-              icon="search"
-              title="Session not found"
-              description="This session doesn't exist or the link is wrong."
-              action={
-                <Button href="/coach/sessions" variant="secondary" size="sm">
-                  Back to sessions
-                </Button>
-              }
-            />
-          </Card>
+        {isNotFoundResult(result) ? (
+          <NotFoundCard
+            title="Session not found"
+            description="This session doesn't exist or the link is wrong."
+            backHref="/coach/sessions"
+            backLabel="Back to sessions"
+          />
         ) : (
           <ErrorState result={result} onRetry={reload} title="Could not load session" />
         )}

@@ -1,6 +1,6 @@
-# Sports Academy
+# AthleteIQ
 
-A simple web app for sports academies to track **practice attendance**, **match scores** and which players are **ready to be scouted**.
+**AthleteIQ** is a web app for sports academies. Coaches track **practice attendance** and **match scores**, players follow their own progress, and scouts see only the players who are **ready**.
 
 🌐 **Live site:** _add your Vercel link here_
 
@@ -23,10 +23,10 @@ Every academy's data is private. One academy can never see another academy's pla
 
 1. **Create an academy.** Sign up → *Create an academy*. You become its Head Coach.
 2. **Invite people.** Share the **join codes** from the *Academy* page. Coaches and scouts sign up with *Join an academy*.
-3. **Add players.** The coach adds each player with an email and a temporary password, then gives those to the player. The player picks their own password at first sign-in.
+3. **Add players.** The coach adds each player with an email and a temporary password. The player picks their own password at first sign-in.
 4. **Practice sessions.** Create a session, mark each player **Present** or **Absent**, then **close** it. A closed session can't be changed.
 5. **Matches.** Only players who were **Present** at that day's closed session can be picked. Enter a score for each.
-6. **Readiness.** The app works out who is Ready on its own.
+6. **Readiness.** AthleteIQ works out who is Ready on its own.
 
 ### When is a player "Ready"?
 
@@ -36,12 +36,13 @@ Every academy's data is private. One academy can never see another academy's pla
 
 ## Features
 
-- Sign in for four roles, each with its own pages
+- Four roles, each with its own pages and permissions
 - Many academies on one site, each kept separate
 - Add, edit, deactivate and reset players
 - Practice sessions with attendance that locks when closed
 - Matches with per-player scores, open to present players only
 - Live readiness for coaches, a personal dashboard for players, and a Ready list for scouts
+- A **guided tour** that explains each page the first time you visit (you can switch it off)
 - Works on phones and computers
 
 ---
@@ -50,7 +51,7 @@ Every academy's data is private. One academy can never see another academy's pla
 
 These are on purpose, to make judging easy:
 
-- **Yellow "For evaluation only" box.** It shows demo logins on *Sign in* and the demo academy's join codes on *Join an academy*, with **Use** buttons to fill them in. It's switched on with `EVALUATION_MODE=true` and will be turned off after judging, when the codes become secret again.
+- **Yellow "For evaluation only" box.** It shows demo logins on *Sign in* and the demo academy's join codes on *Join an academy*, with **Use** buttons. It's switched on with `EVALUATION_MODE=true` and will be turned off after judging, when the codes become secret again.
 - **Demo accounts.** `coach@academy.test`, `scout@academy.test` and `player@academy.test` are made by `npm run seed` and all share one password.
 - **No emails are sent.** The coach passes login details to players directly.
 - **No "forgot password" email.** The coach resets a player's password instead.
@@ -66,14 +67,31 @@ These are on purpose, to make judging easy:
 3. Create the demo academy and accounts: `npm run seed`
 4. Start: `npm run dev`, then open http://localhost:3000
 
-Run the automated tests with `npm test`.
+Check everything at once (code style, all tests and a production build) with `npm run check`.
+
+---
+
+## How it's built (in one minute)
+
+AthleteIQ is **one Next.js app**. The pages and the API live together and deploy to Vercel as a single project.
+
+```text
+app/        Pages (what you see) and API routes (/api/...)
+frontend/   Screens and reusable UI pieces, grouped by feature
+backend/    Rules and data: models, services, validation, security checks
+lib/        Shared basics: database connection, login tokens, role paths
+tests/      280+ automated tests, run against a real (temporary) database
+docs/       All documentation
+```
+
+- **Stack:** Next.js, React, MongoDB with Mongoose, and Tailwind CSS. Logins are built in-house with Node's built-in crypto, with no auth library.
+- **Safety:** every API checks who you are and what academy you belong to *on the server*, never trusting the browser.
 
 ---
 
 ## More details
 
+- [Documentation guide](docs/README.md): which document to read for what
 - [How to test the app, step by step](docs/MANUAL_TEST_PLAN.md) (no coding needed)
-- [Deployment & settings](docs/DEPLOYMENT.md): environment variables, evaluation mode, going live
-- [Technical docs](docs/) for developers: API, backend, frontend and roadmap
-
-Built with Next.js, MongoDB and Tailwind CSS.
+- [How AthleteIQ is built](docs/ARCHITECTURE.md)
+- [Deployment & settings](docs/DEPLOYMENT.md)

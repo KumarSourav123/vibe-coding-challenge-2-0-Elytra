@@ -2,7 +2,7 @@
 
 ## 1. Project overview
 
-Sports Academy Management System: a single Next.js application (App Router, JavaScript, Tailwind CSS, MongoDB Atlas via Mongoose, Next.js Route Handlers as the backend, deployed on Vercel).
+**AthleteIQ**, a sports academy management system: a single Next.js application (App Router, JavaScript, Tailwind CSS, MongoDB Atlas via Mongoose, Next.js Route Handlers as the backend, deployed on Vercel).
 
 Roles:
 

@@ -1,4 +1,4 @@
-# How to Test the Sports Academy App
+# How to Test AthleteIQ
 
 A simple, step-by-step guide to check that everything works. No coding knowledge needed.
 
@@ -31,6 +31,10 @@ If the site runs with **evaluation mode** on, you'll see a yellow **"For evaluat
 - On **Create account → Join an academy**, with the demo academy's join codes. Click **Use** to fill the code.
 
 You can use these to look around quickly. For the full test, still follow the parts below, which create your own academy.
+
+### Guided tour
+
+The first time you open AthleteIQ, it asks whether you'd like a short **guided tour** of each page. Either choice is fine for testing. If you take the tour, follow its hints or close it at any time.
 
 ### 2. Open two browser windows
 

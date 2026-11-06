@@ -4,6 +4,23 @@ Single source of truth for every API endpoint. **Frontend and backend implement 
 
 Contract status values: `DRAFT` (proposed, may change) → `AGREED` (both developers signed off, implementation may start) → `IMPLEMENTED` (built and tested).
 
+**In plain words:** the browser talks to AthleteIQ through the addresses below. Each one says who may use it, what to send, and what comes back. Every reply has the same shape: `{ success, message, data }` when it works, or `{ success: false, message, errors }` when it doesn't.
+
+### Endpoint index
+
+| Area | Endpoints | Who |
+| --- | --- | --- |
+| Sign-in | `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me` · `POST /api/auth/change-password` | Anyone / signed in |
+| Sign-up | `POST /api/auth/register-academy` (new academy) · `POST /api/auth/register` (join with code) · `GET /api/academies/lookup` | Public |
+| Academy | `GET /api/academy` · `PATCH /api/academy` · `POST /api/academy/join-codes` | Coach (changes: Head Coach) |
+| Players | `POST /api/players` · `GET /api/players` · `GET /api/players/:id` · `PATCH /api/players/:id` · `POST /api/players/:id/reset-password` · `GET /api/players/:id/performance` | Coach |
+| Sessions | `POST /api/sessions` · `GET /api/sessions` · `GET /api/sessions/:id` · `POST /api/sessions/:id/attendance` · `POST /api/sessions/:id/close` | Coach |
+| Matches | `GET /api/matches/eligible-players` · `POST /api/matches` · `GET /api/matches` · `GET /api/matches/:id` · `PATCH /api/matches/:id` | Coach |
+| Dashboards | `GET /api/coach/dashboard` (Coach) · `GET /api/player/dashboard` (Player) · `GET /api/scout/players` · `GET /api/scout/players/:id` (Scout) | By role |
+| Other | `GET /api/health` · `GET /api/evaluation` (only in evaluation mode) | Public |
+
+All data endpoints only ever return the signed-in user's **own academy**.
+
 ---
 
 ## 1. Conventions

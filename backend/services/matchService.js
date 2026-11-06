@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { Match, Player, Session } from "@/backend/models";
 import { ATTENDANCE_STATUS, SESSION_STATUS } from "@/backend/utils/constants";
 import { formatDateOnly } from "@/backend/utils/date";
+import { conflictError, findInAcademyOrThrow } from "@/backend/utils/academyScope";
 import { AppError } from "@/backend/utils/errors";
 import { connectToDatabase } from "@/lib/mongodb";
 
@@ -13,13 +14,6 @@ import { connectToDatabase } from "@/lib/mongodb";
  * Eligibility (core rule #7, Q3): active, same sport, and PRESENT in at least
  * one CLOSED session on the same date and sport. Open sessions never count.
  */
-
-const notFound = () => new AppError("Match not found", 404, [{ code: "NOT_FOUND", message: "Match not found" }]);
-
-const conflict = () =>
-  new AppError("The match was changed by another request. Reload and try again", 409, [
-    { code: "CONFLICT", message: "The match was changed by another request. Reload and try again" },
-  ]);
 
 /**
  * Attendance on a date+sport across sessions. A player counts as present if
@@ -123,15 +117,7 @@ async function loadPlayersFor(matches) {
   return new Map(players.map((p) => [String(p._id), p]));
 }
 
-async function findMatchOrThrow(id, academyId) {
-  if (!mongoose.isValidObjectId(id)) {
-    throw new AppError("Validation failed", 400, [{ field: "id", code: "INVALID_ID", message: "Invalid match id" }]);
-  }
-  await connectToDatabase();
-  const match = await Match.findOne({ _id: id, academy: academyId });
-  if (!match) throw notFound();
-  return match;
-}
+const findMatchOrThrow = (id, academyId) => findInAcademyOrThrow(Match, id, academyId, "Match");
 
 const toParticipantDocs = (participants) =>
   participants.map(({ playerId, score }) => ({ player: new mongoose.Types.ObjectId(playerId), score }));
@@ -182,6 +168,6 @@ export async function updateMatch(id, updates, academyId) {
     { $set, $inc: { __v: 1 } },
     { new: true, runValidators: true }
   );
-  if (!updated) throw conflict();
+  if (!updated) throw conflictError("Match");
   return toMatchDTO(updated, await loadPlayersFor([updated]));
 }
